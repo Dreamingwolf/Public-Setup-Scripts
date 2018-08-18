@@ -1,0 +1,1118 @@
+#!/bin/bash
+# Distro Hopper's Friend
+# David F Muller
+# Version 0.1 - alpha
+
+if [ $EUID -ne 0 ]
+then
+   	echo "This script must be run as with root privilege (NOT AS ROOT), type: sudo ./Dragon01_Setup" 
+   	exit 1
+else
+	echo "Welcome to the Distro Hopper's Friend"
+    echo "If you have any doubts about me or this script, please review the code before running"
+    echo "\(You really should do this anyway! ;-\) \)"
+    echo
+    echo "OK then, let's get started!"
+
+    #Gather Basic Info
+
+    #Auto Entry of Sudo Password in the Terminal
+    	read -pr 'Do you want to auto enter your sudo password when in a terminal? (Y/n): ' PSSWD
+
+    #Dedicated Data/Home Partition
+        read -pr 'Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): ' SEPDATA
+
+    #Determine Base Distro
+        echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
+        read -pr "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse, S-slackware)?: " DISTBASE
+    
+    #Additional PPAs and/or Repositories
+        read -pr "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): " ADDREPO
+
+    #Snaps and Flatpaks
+        echo 'Would you like to enable Snaps and Flatpaks (Currently only for Ubuntu)?'
+        read -pr 'These are required for some of the Additional Software Installs (Y/n): ' SNAPFLAT    
+
+    #Additional Software
+        read -pr 'Would you like to install additional software (Currently only for Ubuntu)? (Y/n): ' ADDAPPS
+
+    #End of Gathering Info
+
+    #Start of Actual Work
+        echo "OK then, thats all I need for now, lets get started!"
+
+	#Updating Sudoers File to Add NOPASSWD to User
+        if [ "$PSSWD" == 'Y' ] || [ "$PSSWD" == 'y' ] || [ -z "$PSSWD" ]
+        then
+            echo "Adding NOPASSWD to sudoers file"
+	    	sudo echo "$USER ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+        else
+            sudo echo "$USER ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
+        fi
+	
+	#Seperate Home/Data Partition
+
+        if [ "$SEPDATA" == 'Y' ] || [ "$SEPDATA" == 'y' ] || [ -z "$SEPDATA" ]
+        then
+            #Core Operations
+                PERMHOME=$HOME/.home
+                read -pr 'What is the absolute path (i.e. /dev/sda1) of your data/home partition?: ' PERMDATA
+                read -pr 'What is the filesystem (i.e. ext4) of your data/home partition?: ' UPDATEFSTAB
+                PERMHOME=$( blkid -s UUID -o value "$PERMDATA" )
+                sudo echo "UUID=$PERMHOME $HOME/.home $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
+    
+            #Setup Directories for Mounting
+        		echo "Creating directory for mounting"
+		        mkdir "$HOME/.home"
+			
+        	#Setup home folder
+        		echo "Mounting, setting up, and linking home folder"
+                echo "These folders are based on what I have, YMMV, you will need to manually remove/link"
+                echo "any folders you use that I do not"
+	    		sudo mount "$PERMDATA" "$HOME/.home"
+			
+    		#Remove original folders and set symbolic links
+    			if [ -d "$HOME/.home/Documents" ]
+                then
+                    if [ -d "$HOME/Documents" ]
+                    then
+                        sudo rm -Rf "$HOME/Documents"
+                    fi
+                    sudo ln -s "$HOME/.home/Documents" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Downloads" ]
+                then
+                    if [ -d "$HOME/Downloads" ]
+                        then
+                            sudo rm -Rf "$HOME/Downloads"
+                        fi
+                    sudo ln -s "$HOME/.home/Downloads" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Etcher" ]
+                then
+                    if [ -d "$HOME/Etcher" ]
+                    then
+                        sudo rm -Rf "$HOME/Etcher"
+                    fi
+                    sudo ln -s "$HOME/.home/Etcher" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Games" ]
+                then
+                    if [ -d "$HOME/Games" ]
+                    then
+                        sudo rm -Rf "$HOME/Games"
+                    fi
+                    sudo ln -s "$HOME/.home/Games" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Google_Drive" ]
+                then
+                    if [ -d "$HOME/Google_Drive" ]
+                    then
+                        sudo rm -Rf "$HOME/Google_Drive"
+                    fi
+                    sudo ln -s "$HOME/.home/Google_Drive" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Links" ]
+                then
+                    if [ -d "$HOME/Links" ]
+                    then
+                        sudo rm -Rf "$HOME/Links"
+                    fi
+                    sudo ln -s "$HOME/.home/Links" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Music" ]
+                then
+                    if [ -d "$HOME/Music" ]
+                    then
+                        sudo rm -Rf "$HOME/Music"
+                    fi
+                    sudo ln -s "$HOME/.home/Music" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Pictures" ]
+                then
+                    if [ -d "$HOME/Pictures" ]
+                    then
+                        sudo rm -Rf "$HOME/Pictures"
+                    fi
+                    sudo ln -s "$HOME/.home/Pictures" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Scripts" ]
+                then
+                    if [ -d "$HOME/Scripts" ]
+                    then
+                        sudo rm -Rf "$HOME/Scripts"
+                    fi
+                    sudo ln -s "$HOME/.home/Scripts" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Softmaker" ]
+                then
+                    if [ -d "$HOME/Softmaker" ]
+                    then
+                        sudo rm -Rf "$HOME/Softmaker"
+                    fi
+                    sudo ln -s "$HOME/.home/Softmaker" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Videos" ]
+                then
+                    if [ -d "$HOME/Videos" ]
+                    then
+                        sudo rm -Rf "$HOME/Videos"
+                    fi
+                    sudo ln -s "$HOME/.home/Videos" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/VPNac" ]
+                then
+                    if [ -d "$HOME/VPNac" ]
+                    then
+                        sudo rm -Rf "$HOME/VPNac"
+                    fi
+                    sudo ln -s "$HOME/.home/VPNac" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Wallpapers" ]
+                then
+                    if [ -d "$HOME/Wallpapers" ]
+                    then
+                        sudo rm -Rf "$HOME/Wallpapers"
+                    fi
+                    sudo ln -s "$HOME/.home/Wallpapers" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/Working" ]
+                then
+                    if [ -d "$HOME/Working" ]
+                    then
+                        sudo rm -Rf "$HOME/Working"
+                    fi
+                    sudo ln -s "$HOME/.home/Working" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/.gnupg" ]
+                then
+                    if [ -d "$HOME/.gnupg" ]
+                    then
+                        sudo rm -Rf "$HOME/.gnupg"
+                    fi
+                    sudo ln -s "$HOME/.home/.gnupg" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/.mozilla" ]
+                then
+                    if [ -d "$HOME/.mozilla" ]
+                    then
+                        sudo rm -Rf "$HOME/.mozilla"
+                    fi
+                    sudo ln -s "$HOME/.home/.mozilla" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/.steam" ]
+                then
+                    if [ -d "$HOME/.steam" ]
+                    then
+                        sudo rm -Rf "$HOME/.steam"
+                    fi
+                    sudo ln -s "$HOME/.home/.steam" "$HOME"
+                fi
+
+	    		if [ -d "$HOME/.home/.thunderbird" ]
+                then
+                    if [ -d "$HOME/.thunderbird" ]
+                    then
+                        sudo rm -Rf "$HOME/.thunderbird"
+                    fi
+                    sudo ln -s "$HOME/.home/.thunderbird" "$HOME"
+                fi
+
+        fi
+
+	#Setting up additional PPAs and other Repositories
+        if [ "$ADDREPO" == 'Y' ] || [ "$ADDREPO" == 'y' ] || [ -z "$ADDREPO" ];
+        then
+                                
+            case $DISTBASE in
+                U)
+                    #Base Repos
+                        sudo apt-add-repository -yn main
+                        sudo apt-add-repository -yn restricted
+                        sudo apt-add-repository -yn universe
+                        sudo apt-add-repository -yn multiverse
+
+                    #PPAs
+
+                        # Warning
+                            echo "Adding additional PPAs"
+                            echo "BE WARNED - Not all PPAs have release pages for all versions of Ubuntu. Be sure to verify and correct any issues after installation!"
+
+                        # PPA Installation Commands
+
+                            sudo apt install dialog
+                            cmd1=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
+                            options1=(1 "Canonical Kernal Team" off    # any option can be set to default to "on"
+                                2 "Daniel Richter - grub-customizer" off 
+                                3 "Etcher" off
+                                4 "Nvidia Drivers" off
+                                5 "Linux Uprising - Oracle Java 10" off
+                                6 "Lutris" off
+                                7 "LXQT Team" off
+                                8 "LXQT Team - Testing" off
+                                9 "Firefox-Nightly" off
+                                10 "Thunderbird Beta" off
+                                11 "OBS Project" off
+                                12 "Otto Kesselgulasch - Gimp" off
+                                13 "Peppermint 9" off
+                                14 "Steam" off
+                                15 "Tony George - Timeshift etc" off
+                                16 "Virtualbox" off
+                                17 "Visual Studio Code" off
+                                18 "WebUpd8 Team" off
+                                19 "XFCE - xubuntu-dev-extra" off
+                                20 "XFCE - xubuntu-dev-experimental" off
+                                21 "KDE - kubuntu backports" off
+                                22 "Oibaf - open video drivers for radeon, intel and nvidia" off
+                                23 "Sarnex - Wine + Gallium Nine" off
+                                24 "Maarten Baert - simplescreenrecorder" off
+                                25 "RVM - smplayer gtk" off
+                                26 "RVM - smplayer qt4" off
+                                27 "Sublime Text" off)
+                        #The Rest are here merely to allow for easy expansion
+                            #			 28 "" off
+                            #			 29 "" off
+                            #			 30 "" off
+
+                            choices1=$("${cmd1[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                            clear
+                            for choice1 in $choices1;
+                            do                   
+                                case $choice1 in
+                            
+                                    1)
+                                        #Canonical Kernal Team
+                                        echo "Installing Canonical Kernal Team PPA"
+                                        sudo add-apt-repository -yn ppa:canonical-kernal-team/ppa
+                                        ;;
+
+                                    2)
+                                        #Daniel Richter
+                                        echo "Installing Daniel Richter's PPA for grub-customizer"
+                                        sudo add-apt-repository -yn ppa:danielrichter2007/grub-customizer
+                                        ;;
+
+                                    3)	
+                                        #Etcher
+                                        echo "Installing Etcher Repository"
+                                        echo "deb https://dl.bintray.com/resin-io/debian stable etcher" | sudo tee /etc/apt/sources.list.d/etcher.list
+                                        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+                                        ;;
+                                
+                                    4)
+                                        #Nvidia Drivers
+                                        echo "Installing Graphics Drivers PPA for Nvidia drivers"
+                                        sudo add-apt-repository -yn ppa:graphics-drivers/ppa
+                                        ;;
+
+                                    5)
+                                        #Linux Uprising Java 10
+                                        echo "Installing Linux Uprising PPA for Oracle Java 10"
+                                        sudo add-apt-repository -yn ppa:linuxuprising/java
+                                        ;;
+
+                                    6)
+                                        #Lutris
+                                        echo "Installing Lutris Repository"
+                                        ver=$(lsb_release -sr);
+                                        if [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
+                                        echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                                        wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                                        ;;
+
+                                    7)
+                                        #LXQT Team
+                                        echo "Installing LXQT Team PPA"
+                                        sudo add-apt-repository -yn ppa:lxqt/ppa
+                                        ;;
+
+                                    8)
+                                        #LXQT Team - Testing
+                                        echo "Installing LXQT Team - Testing PPA"
+                                        sudo add-apt-repository -yn ppa:lxqt/testing
+                                        ;;
+
+                                    9)
+                                        #Firefox-Nightly
+                                        echo "Installing PPA for Firefox Nightly. Install as firefox-trunk."
+                                        sudo add-apt-repository -yn ppa:ubuntu-mozilla-daily/ppa
+                                        ;;
+
+                                    10)
+                                        #Thunderbird Beat
+                                        echo "Installing PPA for Thunderbird Beta. Install as thunderbird."
+                                        sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
+                                        ;;
+
+                                    11)
+                                        #OBS Project
+                                        echo "Installing OBSProject PPA"
+                                        sudo add-apt-repository -yn ppa:obsproject/obs-studio
+                                        ;;
+
+                                    12)
+                                        #Otto Kesselgulasch
+                                        #Need to expand later for multiple choice within Otto's repos
+                                        echo "Installing Otto Kesselgulasch PPA for Gimp"
+                                        sudo add-apt-repository -yn ppa:otto-kesselgulasch/gimp
+                                        ;;
+
+                                    13)
+                                        #Peppermint 9
+                                        echo "Installing Release PPA for Peppermint 9 OS"
+                                        sudo add-apt-repository -yn ppa:peppermintos/p9-release
+                                        ;;
+
+                                    14)
+                                        #Steam
+                                        echo "Installing Steam PPA for Ubuntu Precise"
+                                        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B05498B7
+                                        sudo sh -c 'echo "deb http://repo.steampowered.com/steam/ precise steam" | sudo tee -a /etc/apt/sources.list.d/steam.list'
+                                        ;;
+
+                                    15)
+                                        #Tony George
+                                        echo "Installing Tony George PPA for timeshift, etc"
+                                        sudo add-apt-repository -yn ppa:teejee2008/ppa
+                                        ;;
+
+                                    16)
+                                        #Virtualbox
+                                        echo "Installing Virtualbox Repository"
+                                        wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
+                                        wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+                                        sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+                                        ;;
+
+                                    17)
+                                        #Visual Studio Code
+                                        echo "Installing Visual Studio Code Repository. Install as code"
+                                        curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+                                        sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
+                                        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+                                        ;;
+
+                                    18)
+                                        #WebUpd8 Team
+                                        #Need to expand later for multiple choice within WebUpd8's repos
+                                        echo "Installing WebUpd8 PPA for PPA Manager"
+                                        sudo add-apt-repository -yn ppa:webupd8team/y-ppa-manager
+                                        ;;
+                                        
+                                    19)
+                                        #XFCE - xubuntu-dev-extra
+                                        echo "Installing xubuntu-dev-extras for XFCE"
+                                        sudo add-apt-repository -yn ppa:xubuntu-dev/extras
+                                        ;;
+
+                                    20)
+                                        #XFCE - xubuntu-dev-experimental
+                                        echo "Installing xubuntu-dev-experimental for XFCE"				
+                                        sudo add-apt-repository -yn ppa:xubuntu-dev/experimental
+                                        ;;
+
+                                    21)
+                                        #KDE kubuntu backports
+                                        echo "Installing kubuntu backports PPA for KDE"
+                                        sudo add-apt-repository -yn ppa:kubuntu-ppa/backports
+                                        ;;
+
+                                    22)
+                                        #Oibaf - open video drivers
+                                        sudo add-apt-repository -yn ppa:oibaf/graphics-drivers
+                                        ;;
+                    
+                                    23)
+                                        #Sarnex - Wine + Gallium Nine
+                                        sudo add-apt-repository -yn ppa:commendsarnex/winedri3
+                                        ;;
+
+                                    24)
+                                        #Maarten Baert - simplescreenrecorder
+                                        sudo add-apt-repository -yn ppa:maarten-baert/simplescreenrecorder
+                                        ;;
+                                    
+                                    25)
+                                        #RVM - smplayer gtk
+                                        sudo add-apt-repository -yn ppa:rvm/smplayer
+                                        ;;
+                                    
+                                    26)
+                                        #RVM - smplayer qt4
+                                        sudo add-apt-repository ppa:rvm/smplayer-qt4
+                                        ;;
+                                    
+                                    27)	
+                                        #Sublimehq - Sublime text
+                                        wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+                                        sudo apt install apt-transport-https -y
+                                        echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
+                                        ;;
+
+                                #The rest are here merely to allow for expansion
+                                    #			28)
+                                                    #
+                                    #				;;
+                                    #
+                                    #			29) 
+                                                    #
+                                    #				;;
+                                    #
+                                    #			30) 
+                                                    #
+                                    #				;;
+                                    #
+                                esac
+                            done
+
+                        # Updating the Cache after all PPAs have been set up.
+                            echo "Updating the Apt Cache. Double check for any problems!"
+                            sudo apt update
+
+                    ;;
+
+                A)
+                    ;;
+
+                C)
+                    ;;
+
+                D)
+                    ;;
+
+                F)
+                    ;;
+
+                O)
+                    ;;
+
+                S)
+                    ;;
+
+            esac                        
+
+        fi
+
+    #Snaps and Flatpaks
+        if [ "$SNAPFLAT" == 'Y' ] || [ "$SNAPFLAT" == 'y' ] || [ -z "$SNAPFLAT" ]
+        then
+            echo "Installing Flatpak & Snaps"
+            case $DISTBASE in
+                U)        
+                        sudo apt update
+                        sudo apt install flatpak -y
+                        sudo apt install snapd -y
+
+                    ;;
+
+                A)
+                    ;;
+
+                C)
+                    ;;
+
+                D)
+                    ;;
+
+                F)
+                    ;;
+
+                O)
+                    ;;
+
+                S)
+                    ;;
+
+            esac                
+        fi
+
+    #Additional Software Installation
+        if [ "$ADDAPPS" == 'Y' ] || [ "$ADDAPPS" == 'y' ] || [ -z "$ADDAPPS" ]
+        then
+            echo "Installing Additional Software"
+            cmd2=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)
+        	options2=(1 "Sublime Text" off    # any option can be set to default to "on"
+        		2 "Simplenote" off
+                3 "Leafpad" off
+                4 "Terminology" off
+                5 "Filezilla" off
+                6 "Zoom Meeting Client" off
+                7 "Telegram (SNAP)" off
+                8 "Elementary Tweaks" off
+                9 "Ubuntu Restricted Extras" off
+                10 "SM Player Media Player" off
+                11 "Gnome Tweak Tool" off
+                12 "Google Chrome" off
+                13 "Vivaldi" off
+                14 "Firefox-Nightly Browser" off
+                15 "GIMP" off
+                16 "OBS-Studio" off
+                17 "Kdenlive" off
+                18 "Gnome Boxes" off
+                19 "Virtualbox" off
+                20 "Atom" off
+                21 "Putty" off
+                22 "Steam (Valve)" off
+                23 "PIA VPN (Network Mgr Version)" off
+                24 "Docky" off
+                25 "Lutris" off
+                26 "Hexchat" off
+                27 "Shotwell" off
+                28 "Cheese" off
+                29 "Audacity" off
+                30 "Guvcview (webcam settings)" off
+                31 "Pithos (Pandora)" off
+                32 "Gnome Shell" off
+                33 "Gnome-do (search tool)" off
+                34 "Discord (Snap)" off
+                35 "Google Desktop Player (rocco)" off
+                36 "Etcher" off
+                37 "Tilix" off
+                38 "Synology NAS Backup" off
+                39 "KXStudio Jack Setup (Advanced Audio)" off
+                40 "Catfish - File Search" off
+                41 "Xfce Monitor Move Script" off
+                42 "Thunderbird" off
+                43 "Softmaker Office 2016" off
+                44 "Oracle Java 10" off
+                45 "Cairo-dock" off
+                46 "Grub-Customizer" off
+                47 "Samba File Systems" off
+                48 "Compression Tools" off
+                49 "Graphics Misc." off
+                50 "Multimedia Misc." off
+                51 "HPLIP" off
+                52 "Overgrive" off
+                53 "Ubuntu Kernel Update Utility" off
+                54 "Post Install Auto Clean Up & Update" on
+#                55 "Hold for future use" off
+#                56 "Hold for future use" off
+#                57 "Hold for future use" off
+                )
+            choices2=$("${cmd2[@]}" "${options2[@]}" 2>&1 >/dev/tty)
+            clear
+            case $DISTBASE in
+                U)
+                    sudo apt update
+                	sudo apt install dialog -y
+
+                    for choice2 in $choices2
+                    do
+                        case $choice2 in
+                        
+                        1)
+                            #Install Sublime Text*
+                            echo "Installing Sublime Text"
+                            if [ -e /etc/apt/sources.list.d/sublime-text.list ]
+                            then
+                                sudo apt install sublime-text -y
+                            else
+                                wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+                                sudo apt install -y apt-transport-https
+                                echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
+                                sudo apt update
+                                sudo apt install sublime-text -y
+                            fi
+                            ;;
+
+                        2)
+                            #Simplenote
+                            echo "Installing Simplenote"
+                            wget https://github.com/Automattic/simplenote-electron/releases/download/v1.1.7/Simplenote-linux-1.1.7.deb
+                            sudo dpkg -i Simplenote-linux-1.1.7.deb
+                            sudo rm -rf Simplenote-linux-1.1.7.deb
+                            ;;
+
+                        3)	
+                            #Install Leafpad
+                            echo "Leafpad"
+                            sudo apt install leafpad -y
+                            ;;
+                            
+                        4)
+                            #Terminology
+                            echo "Installing Terminology"
+                            sudo apt install terminology -y
+                            ;;
+
+                        5)
+                            #Filezilla
+                            echo "Filezilla not related to Godzilla"
+                            sudo apt install filezilla -y
+                            ;;
+                        6)
+                            #Zoom
+                            echo "Installing Zoom Meeting Client"
+                            echo "Installing dependency first First"				
+                            sudo apt install libxcb-xtest0 -y
+                            'cd ~/Downloads || return'				
+                            wget https://zoom.us/client/latest/zoom_amd64.deb
+                            sudo dpkg -i zoom_amd64.deb
+                            sudo rm -rf zoom_amd64.deb
+                            ;;
+                        7)
+                            #Telegram
+                            echo "Telegram Snap"
+                            sudo snap install telegram-desktop
+                            ;;
+                        8)
+                            #Elementary OS Tweaks
+                            echo "Installing Elementary Tweaks"
+                            sudo apt install software-properties-common
+                            sudo apt update
+                            sudo apt install elementary-tweaks -y
+                            ;;
+                        9)
+                            #Ubuntu Restricted Extras
+                            echo "Installing Ubuntu Restricted Extras"
+                            sudo apt install ubuntu-restricted-extras -y
+                            ;;
+                        10)
+                            #SMPlayer
+                            echo "SMPlayer"
+                            sudo apt install smplayer -y
+                            ;;
+                        11)
+                            #Gnome tweak tool
+                            echo "Installing Gnome Tweak Tool"
+                            sudo apt install gnome-tweak-tool -y
+                            ;;
+                        12)
+
+                            #Chrome
+                            echo "Installing Google Chrome"
+                            wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+                            sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee -a /etc/apt/sources.list.d/google-chrome.list'
+                            sudo apt update 
+                            sudo apt install google-chrome-stable -y
+                            ;;
+                        13)
+                            #Vivaldi
+                            echo "Installing Vivaldi"
+                            'cd ~/Downloads || return'				
+                            wget https://downloads.vivaldi.com/stable/vivaldi-stable_1.15.1147.64-1_amd64.deb
+                            sudo dpkg -i vivaldi-stable_1.15.1147.64-1_amd64.deb
+                            sudo apt install -f -y
+                            rm -rf vivaldi-stable_1.15.1147.64-1_amd64.deb
+                            ;;
+                        14)
+
+                            #Firefox Browser
+                            echo "Firefox-Nightly"
+                            if [ -e "/etc/apt/sources.list.d/ubuntu-mozilla-daily-ubuntu-ppa-$(lsb_release -sc).list" ]
+                            then
+                                sudo apt install firefox-trunk -y
+                            else
+                                sudo add-apt-repository -yn ppa:ubuntu-mozilla-daily/ppa
+                                sudo apt update && sudo apt install firefox-trunk -y
+                            fi
+                            ;;
+                        15)
+
+                            #GIMP
+                            echo "Installing GIMP"
+                            if [ -e "/etc/apt/sources.list.d/otto-kesselgulasch-ubuntu-gimp-$(lsb_release -sc).list" ]
+                            then
+                                sudo apt install gimp -y
+                            else
+                                sudo add-apt-repository -yn ppa:otto-kesselgulasch/gimp
+                                sudo apt update && sudo apt install gimp -y
+                            fi
+                            ;;
+                        16)
+                            #OBS Studio
+                            echo "Installing OBS Studio"
+                            sudo apt install ffmpeg -y
+                            if [ -e "/etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-$(lsb_release -sc).list" ]
+                            then
+                                sudo apt install obs-studio -y
+                            else
+                                sudo add-apt-repository ppa:obsproject/obs-studio
+                                sudo apt update && sudo apt install obs-studio -y
+                            fi
+                            ;;
+                        17)
+
+                            #Kdenlive
+                            echo "Kdenlive"
+                            sudo apt install kdenlive -y
+                            sudo apt install breeze-icon-theme -y
+                            sudo apt install vlc -y
+                            ;;
+                        18)
+                            #Gnome Boxes
+                            echo "Installing Gnome Boxes"
+                            sudo apt install gnome-boxes -y
+                            ;;
+
+                        19)	#Virtualbox
+                            echo "Installing Virtualbox"
+                            if [ -e /etc/apt/sources.list.d/virtualbox.list ]
+                            then
+                                sudo apt -y install gcc make "linux-headers-$(uname -r)" dkms
+                                sudo apt install virtualbox-5.2 -y
+                            else
+                                wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
+                                wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+                                sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -sc) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+                                sudo apt -y install gcc make "linux-headers-$(uname -r)" dkms
+                                sudo apt install virtualbox-5.2 -y
+                            fi
+                            ;;
+
+                        20)	#Atom
+                            echo "Installing Atom"				
+                            'cd ~/Downloads || return'			
+                            wget -O atom-amd64.deb https://atom.io/download/deb			
+                            sudo dpkg -i atom-amd64.deb
+                            sudo apt install -f -y
+                            sudo rm -rf atom-amd64.deb
+                            sudo apm install atom-html-preview
+                            ;;
+
+                        21)	#Putty
+                            echo "Putty"
+                            sudo apt install putty -y
+                            ;;
+
+                        22)	#Steam
+                            echo "Installing Steam"				
+                            sudo apt install steam -y
+                            ;;
+
+                        23)	#PIA VPN
+                            echo "Installing PIA VPN Network Manager Version"
+                            'cd ~/Downloads || return'				
+                            wget https://www.privateinternetaccess.com/installer/install_ubuntu.sh
+                            sudo sh ./install_ubuntu.sh
+                            echo "After entering username, go to network manager and turn on VPN and select from PIA locations, enter password and boom!"
+                            ;;
+
+                        24)	#Docky
+                            echo "Installing Docky"
+                            sudo apt install docky -y
+                            ;;
+
+                        25)	#Lutris
+                            echo "Installing Lutris"
+                            if [ -e /etc/apt/sources.list.d/lutris.list ]
+                            then
+                                sudo apt install lutris -y
+                            else
+                                ver=$(lsb_release -sr); if [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
+                                wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                                echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                                sudo apt update && sudo apt install lutris -y
+                            fi
+                            ;;
+
+                        26)	#Hexchat
+                            echo "Installing Hexchat"
+                            sudo apt install hexchat -y
+                            ;;
+
+                        27)	#Shotwell
+                            echo "Installing Shotwell"
+                            sudo apt install shotwell -y
+                            ;;
+
+                        28)	#Cheese
+                            echo "Installing Cheese"
+                            sudo apt install cheese -y
+                            ;;
+
+                        29) 
+                            #Audacity
+                            echo "installing Audacity"
+                            sudo apt install audacity -y
+                            ;;
+
+                        30) 
+                            #Guvcview
+                            echo "installing Guvcview"
+                            sudo apt install -y libgslcblas0 guvcview
+                            ;;
+
+                        31) 
+                            #Pithos
+                            echo "installing Pithos"
+                            sudo apt install pithos -y
+                            ;;
+                        
+                        32) 
+                            #Gnome Shell
+                            echo "installing Gnome Shell"
+                            sudo apt install chrome-gnome-shell -y
+                            ;;
+                        
+                        33) 
+                            #Gnome-do
+                            echo "Installing GnomeDo"
+                            sudo apt install -y gnome-do gnome-do-plugins
+                            ;;
+                        34)
+                            #Discord
+                            sudo snap install discord
+                            ;;
+
+                        35) 
+                            #Google Desktop Player
+                            echo "Installing Google Desktop Player"
+                            'cd ~/Downloads || return'
+                            wget -O google-play-music-desktop-player.deb https://github.com/MarshallOfSound/Google-Play-Music-Desktop-Player-UNOFFICIAL-/releases/download/v4.5.0/google-play-music-desktop-player_4.5.0_amd64.deb
+                            sudo dpkg -i google-play-music-desktop-player*.deb
+                            sudo apt install -f -y
+                            sudo rm -rf google-play-music-desktop-player*.deb
+                            ;;
+
+                        36) 
+                            #Etcher ISO Creator
+                            echo "Installing Etcher"
+                            'cd ~/Downloads || return'
+                            wget -O etcher.zip https://github.com/resin-io/etcher/releases/download/v1.4.4/etcher-1.4.4-linux-x86_64.zip	
+                            sudo apt install unzip -y
+                            unzip etcher*.zip
+                            sudo chmod +x ~/Downloads/etcher-*.AppImage
+                            ;;
+
+                        37) 
+                            #Tilix (Tiling Terminal)
+                            echo "Installing Tilix"
+                            sudo apt install tilix -y
+                            ;;
+
+                        38) 
+                            #Synology NAS Assistant & Backup
+                            echo "Installing Syn Assist, CloudStation Backup"
+                            wget -O synassistant.deb https://global.download.synology.com/download/Tools/Assistant/6.1-15163/Ubuntu/x86_64/synology-assistant_6.1-15163_amd64.deb
+                            sudo dpkg -i synassistant*.deb
+                            sudo apt install -f -y
+                            sudo rm -rf synassistant*.deb
+                            wget -O cloudback.deb https://global.download.synology.com/download/Tools/CloudStationBackup/4.2.6-4408/Ubuntu/Installer/x86_64/synology-cloud-station-backup-4408.x86_64.deb
+                            sudo dpkg -i cloudback*.deb
+                            sudo apt install -f -y
+                            sudo rm -rf cloudback*.deb
+                            ;;
+
+                        39) 
+                            #Advanced Jack Audio Setup
+                            echo "installing KXStudio Jack"
+                            # Get user name for permissions
+                            #echo "Enter your username"
+                            #read -pr 'Username: ' uservar
+                            # Install required dependencies if needed
+                            sudo apt install apt-transport-https software-properties-common wget
+                            wget https://launchpad.net/~kxstudio-debian/+archive/kxstudio/+files/kxstudio-repos_9.5.1~kxstudio3_all.deb
+                            # Install it
+                            sudo dpkg -i kxstudio-repos_9.5.1~kxstudio3_all.deb
+                            sudo apt install libglibmm-2.4-1v5 -y
+                            wget https://launchpad.net/~kxstudio-debian/+archive/kxstudio/+files/kxstudio-repos-gcc5_9.5.1~kxstudio3_all.deb
+                            sudo dpkg -i kxstudio-repos-gcc5_9.5.1~kxstudio3_all.deb
+                            currentuser=$(who | awk 'NR==1{print $1}')
+                                    sudo usermod -a -G audio "$currentuser"
+                                    sudo apt update && sudo apt upgrade -y
+                                    sudo apt install jackd2-firewire -y
+                                    sudo apt install -y jackd2 carla-git cadence non-mixer pulseaudio-module-jack mididings -y
+                                    # Download auto script github
+                                    'cd ~/ || return'
+                                    mkdir jacksetup
+                                    'cd ~/jacksetup || return'
+                                    wget https://raw.githubusercontent.com/Skrappjaw/audio-scripts/master/start_jack.sh
+                                    sudo chmod +x ~/jacksetup/start_jack.sh
+                                    sudo chown -R "$currentuser":"$currentuser" ~/jacksetup
+                            # Optional to put script into autostart
+                            #cd ~/
+                            #cp ~/jacksetup/start_jack.sh /etc/init.d/
+                            #update-rc.d start_jack.sh defaults
+                            ;; 
+                        
+                        40) 
+                            #Install Catfish
+                            echo "Installing Catfish"
+                            sudo apt install catfish -y
+                            ;;
+
+                        41) 
+                            #Install monitor move window script Xfce
+                            echo "Monitor move window script"
+                            wget https://raw.githubusercontent.com/dasgeekchannel/move-to-next-monitor/master/move-to-next-monitor
+                            'cd ~/Documents || return'
+                            currentuser=$(who | awk 'NR==1{print $1}')
+                            sudo chmod +x ~/Documents/move-to-next-monitor
+                            sudo chown -R "$currentuser":"$currentuser" ~/Documents/move-to-next-monitor
+                            ;;
+
+                        42)	
+                            #Install Mozilla Thunderbird
+                            echo "Installing Thunderbird"
+                            if [ -e "/etc/apt/sources.list.d/mozillateam-ubuntu-thunderbird-next-$(lsb_release -sc).list" ]
+                            then
+                                sudo apt install thunderbird -y
+                            else
+                                sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
+                                sudo apt update && sudo apt install thunderbird -y
+                            fi
+                            ;;
+
+                        43)
+                            #Install Softmaker Office 2016
+                            echo "Installing Softmaker Office 2016"
+                            'cd ~/Downloads || return'
+                            wget http://www.softmaker.net/down/softmaker-office-2016_761-01_i386.deb
+                            sudo dpkg -i softmaker-office-2016_761-01_i386.deb
+                            sudo rm ./softmaker-office-2016_761-01_i386.deb
+                            ;;
+
+                        44)
+                            #Install Oracle Java 10 and set Runtime
+                            echo "Installing Oracle Java 10"
+                            if [ -e "/etc/apt/sources.list.d/linuxuprising-ubuntu-java-$(lsb_release -sc).list" ]
+                            then
+                                echo oracle-java10-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+                                sudo apt update && sudo apt install oracle-java10-installer
+                            else
+                                sudo add-apt-repository -yn ppa:linuxuprising/java
+                                echo oracle-java10-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+                                sudo apt update && sudo apt install oracle-java10-installer
+                            fi
+                            ;;
+
+                        45)
+                            #Install Cairo-dock
+                            sudo apt install cairo-dock -y
+                            ;;
+
+                        46)
+                            #Install Grub-Customizer
+                            echo "Installing Grub-Customizer"
+                            if [ -e "/etc/apt/sources.list.d/danielrichter2007-ubuntu-grub-customizer-$(lsb_release -sc).list" ]
+                            then
+                               sudo apt install grub-customizer -y
+                            else 
+                                sudo add-apt-repository -yn ppa:danielrichter2007/grub-customizer
+                                sudo apt update && sudo apt install grub-customizer -y
+                            fi
+                            ;;
+
+                        47)
+                            #Install Samba File Systems
+                            echo "Installing File Systems for Samba"
+                            sudo apt install -y nfs-common fusesmb samba python-smbc cifs-utils
+                            ;;
+
+                        48)
+                            #Install Compression Tools
+                            echo "Installing Compression Tools"
+                            sudo apt install -y engrampa p7zip-rar arj lzip rar unrar rpm2cpio rzip unace
+                            ;;
+
+                        49)
+                            #Install Misc. Graphics Tools
+                            echo "Installing Misc. Graphics Tools"
+                            sudo apt install -y darktable gwenview inkscape okular skanlite
+                            ;;
+
+                        50)
+                            #Install Misc. Multimedia Tools
+                            echo "Installing Misc. Multimedia Tools"
+                            sudo apt install -y k3b openshot simplescreenrecorder
+                            ;;
+
+                        51)
+                            #Install HPLIP
+                            echo "Installing HPLIP"
+                            sudo apt install -y hplip xsane
+                            ;;
+
+                        52)
+                            #Install  Overgrive
+                            echo "Installing Overgrive"
+                            sudo add-apt-repository universe && sudo apt update
+                            wget https://www.thefanclub.co.za/sites/default/files/public/overgrive/overgrive_3.2.3_all.deb
+                            # Steps to fix Overgrive fail to install/start
+                                wget https://bootstrap.pypa.io/get-pip.py
+                                sudo python2.7 get-pip.py
+                                sudo pip2.7 install msgpack-python
+                                sudo pip2.7 install --upgrade google-api-python-client
+                                sudo pip2.7 install --upgrade oauth2client
+                            sudo dpkg -i overgrive_3.2.3_all.deb
+                            ;;
+
+                        53)
+                            #Ubuntu Kernel Update Utility
+                            echo "Installing UKUU"
+                            sudo apt install ukuu
+                            ;;
+
+                        54)	
+                            #Clean up
+                            echo "Running Clean Up And Update"
+                            sudo apt update
+                            sudo apt full-upgrade -y
+                            sudo apt autoremove
+                            ;;
+
+#                       55)
+                            #
+#                            ;;
+#
+#                        56)
+                            #
+#                            ;;
+#
+#                        57)
+                            #
+#                            ;;
+#
+                    esac
+                done
+
+                    ;;
+
+                A)
+                    ;;
+
+                C)
+                    ;;
+
+                D)
+                    ;;
+
+                F)
+                    ;;
+
+                O)
+                    ;;
+
+                S)
+                    ;;
+
+            esac
+    fi
+
+
+    #Update hosts file
+		echo "I would suggest updating your hosts file for security"
+        echo "You might consider using https://someonewhocares.org/hosts/hosts as a base"
+				
+	#Reboot Reminder
+		echo "Don't forget to reboot before updating to assure proper disk mounting!!!"
+
+fi
+

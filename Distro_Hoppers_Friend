@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1.4-alpha
+# Version 0.1.5-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -16,33 +16,33 @@ else
 
     #Gather Basic Info
     	echo "What is your user name?: "
-	read USENAM
+	    read USENAM
 
     #Auto Entry of Sudo Password in the Terminal
     	echo "Do you want to auto enter your sudo password when in a terminal? (Y/n): "
-	read PASSWD
+	    read PASSWD
 
     #Dedicated Data/Home Partition
         echo "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): "
-	read SEPDATA
+	    read SEPDATA
 
     #Determine Base Distro
         echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
         echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse, G-gentoo)?: "
-	read DISTBASE
+	    read DISTBASE
     
     #Additional PPAs and/or Repositories
         echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): "
-	read ADDREPO
+	    read ADDREPO
 
     #Snaps and Flatpaks
         echo "Would you like to enable Snaps and Flatpaks (Currently only for Ubuntu)?"
         echo "These are required for some of the Additional Software Installs (Y/n): "
-	read SNAPFLAT
+	    read SNAPFLAT
 
     #Additional Software
         echo "Would you like to install additional software (Currently only for Ubuntu)? (Y/n): "
-	read ADDAPPS
+	    read ADDAPPS
 
     #End of Gathering Info
 
@@ -116,6 +116,15 @@ else
                         sudo rm -Rf "$HOME/Games"
                     fi
                     sudo ln -s "$HOME/.home/Games" "$HOME"
+                fi
+
+                if [ -d "$HOME/.home/Github" ]
+                then
+                    if [ -d "$HOME/Github" ]
+                    then
+                        sudo rm -Rf "$HOME/Github"
+                    fi
+                    sudo ln -s "$HOME/.home/Github" "$HOME"
                 fi
 
 	    		if [ -d "$HOME/.home/Google_Drive" ]
@@ -474,7 +483,7 @@ else
                                     
                                     26)
                                         #RVM - smplayer qt4
-                                        sudo add-apt-repository ppa:rvm/smplayer-qt4
+                                        sudo add-apt-repository -yn ppa:rvm/smplayer-qt4
                                         ;;
                                     
                                     27)	
@@ -734,7 +743,7 @@ else
 
                             #Firefox Browser
                             echo "Firefox-Nightly"
-                            if [ -e "/etc/apt/sources.list.d/ubuntu-mozilla-daily-ubuntu-ppa-$(lsb_release -sc).list" ]
+                            if [ -e /etc/apt/sources.list.d/ubuntu-mozilla-daily-ubuntu-ppa-"$(lsb_release -sc)".list ]
                             then
                                 sudo apt install firefox-trunk -y
                             else
@@ -746,7 +755,7 @@ else
 
                             #GIMP
                             echo "Installing GIMP"
-                            if [ -e "/etc/apt/sources.list.d/otto-kesselgulasch-ubuntu-gimp-$(lsb_release -sc).list" ]
+                            if [ -e /etc/apt/sources.list.d/otto-kesselgulasch-ubuntu-gimp-"$(lsb_release -sc)".list ]
                             then
                                 sudo apt install gimp -y
                             else
@@ -758,7 +767,7 @@ else
                             #OBS Studio
                             echo "Installing OBS Studio"
                             sudo apt install ffmpeg -y
-                            if [ -e "/etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-$(lsb_release -sc).list" ]
+                            if [ -e /etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-"$(lsb_release -sc)".list ]
                             then
                                 sudo apt install obs-studio -y
                             else
@@ -784,12 +793,12 @@ else
                             echo "Installing Virtualbox"
                             if [ -e /etc/apt/sources.list.d/virtualbox.list ]
                             then
-                                sudo apt -y install gcc make "linux-headers-$(uname -r)" dkms
+                                sudo apt install -y gcc make linux-headers-"$(uname -r)" dkms
                                 sudo apt install virtualbox-5.2 -y
                             else
                                 wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
                                 wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
-                                sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -sc) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+                                sudo sh -c 'echo deb http://download.virtualbox.org/virtualbox/debian "$(lsb_release -sc)" contrib | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
                                 sudo apt -y install gcc make "linux-headers-$(uname -r)" dkms
                                 sudo apt install virtualbox-5.2 -y
                             fi
@@ -903,11 +912,7 @@ else
                         36) 
                             #Etcher ISO Creator
                             echo "Installing Etcher"
-                            'cd ~/Downloads || return'
-                            wget -O etcher.zip https://github.com/resin-io/etcher/releases/download/v1.4.4/etcher-1.4.4-linux-x86_64.zip	
-                            sudo apt install unzip -y
-                            unzip etcher*.zip
-                            sudo chmod +x ~/Downloads/etcher-*.AppImage
+                            sudo apt install -y etcher-electron
                             ;;
 
                         37) 
@@ -1001,14 +1006,14 @@ else
                         44)
                             #Install Oracle Java 10 and set Runtime
                             echo "Installing Oracle Java 10"
-                            if [ -e "/etc/apt/sources.list.d/linuxuprising-ubuntu-java-$(lsb_release -sc).list" ]
+                            if [ -e /etc/apt/sources.list.d/linuxuprising-ubuntu-java-"$(lsb_release -sc)".list ]
                             then
                                 echo oracle-java10-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
-                                sudo apt update && sudo apt install oracle-java10-installer
+                                sudo apt update && sudo apt install -y oracle-java10-installer
                             else
                                 sudo add-apt-repository -yn ppa:linuxuprising/java
                                 echo oracle-java10-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
-                                sudo apt update && sudo apt install oracle-java10-installer
+                                sudo apt update && sudo apt install -y oracle-java10-installer
                             fi
                             ;;
 
@@ -1020,7 +1025,7 @@ else
                         46)
                             #Install Grub-Customizer
                             echo "Installing Grub-Customizer"
-                            if [ -e "/etc/apt/sources.list.d/danielrichter2007-ubuntu-grub-customizer-$(lsb_release -sc).list" ]
+                            if [ -e /etc/apt/sources.list.d/danielrichter2007-ubuntu-grub-customizer-"$(lsb_release -sc)".list ]
                             then
                                sudo apt install grub-customizer -y
                             else 
@@ -1032,7 +1037,7 @@ else
                         47)
                             #Install Samba File Systems
                             echo "Installing File Systems for Samba"
-                            sudo apt install -y nfs-common fusesmb samba python-smbc cifs-utils
+                            sudo apt install -y nfs-common fusesmb samba python-smbc cifs-utils exfat-utils
                             ;;
 
                         48)
@@ -1076,7 +1081,7 @@ else
                         53)
                             #Ubuntu Kernel Update Utility
                             echo "Installing UKUU"
-                            sudo apt install ukuu
+                            sudo apt install -y ukuu
                             ;;
 
                         54)	

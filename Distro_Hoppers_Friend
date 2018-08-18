@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1.1 - alpha
+# Version 0.1.2-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -600,8 +600,8 @@ else
                 51 "HPLIP" off
                 52 "Overgrive" off
                 53 "Ubuntu Kernel Update Utility" off
-                54 "Post Install Auto Clean Up & Update" on
-#                55 "Hold for future use" off
+                54 "Git" on
+                55 "Post Install Auto Clean Up & Update" off
 #                56 "Hold for future use" off
 #                57 "Hold for future use" off
                 )
@@ -1061,16 +1061,18 @@ else
                             ;;
 
                         54)	
+                            #Git
+                            echo "Installing Git"
+                            sudo apt install -y git
+                            ;;
+
+                        55)
                             #Clean up
                             echo "Running Clean Up And Update"
                             sudo apt update
                             sudo apt full-upgrade -y
                             sudo apt autoremove
                             ;;
-
-#                       55)
-                            #
-#                            ;;
 #
 #                        56)
                             #

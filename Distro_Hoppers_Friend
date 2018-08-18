@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1.2-alpha
+# Version 0.1.3-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -214,6 +214,15 @@ else
                         sudo rm -Rf "$HOME/.mozilla"
                     fi
                     sudo ln -s "$HOME/.home/.mozilla" "$HOME"
+                fi
+
+                if [ -d "$HOME/.home/.ssh" ]
+                then
+                    if [ -d "$HOME/.ssh" ]
+                    then
+                        sudo rm -Rf "$HOME/.ssh"
+                    fi
+                    sudo ln -s "$HOME/.home/.ssh" "$HOME"
                 fi
 
 	    		if [ -d "$HOME/.home/.steam" ]

@@ -1,11 +1,11 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1 - alpha
+# Version 0.1.1 - alpha
 
 if [ $EUID -ne 0 ]
 then
-   	echo "This script must be run as with root privilege (NOT AS ROOT), type: sudo ./Dragon01_Setup" 
+   	echo "This script must be run as with root privilege (NOT AS ROOT), type: sudo ./Distro_Hoppers_Friend" 
    	exit 1
 else
 	echo "Welcome to the Distro Hopper's Friend"
@@ -24,7 +24,7 @@ else
 
     #Determine Base Distro
         echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
-        read -pr "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse, S-slackware)?: " DISTBASE
+        read -pr "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse, G-gentoo)?: " DISTBASE
     
     #Additional PPAs and/or Repositories
         read -pr "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): " ADDREPO
@@ -502,7 +502,7 @@ else
                 O)
                     ;;
 
-                S)
+                G)
                     ;;
 
             esac                        
@@ -536,7 +536,7 @@ else
                 O)
                     ;;
 
-                S)
+                G)
                     ;;
 
             esac                
@@ -1100,7 +1100,7 @@ else
                 O)
                     ;;
 
-                S)
+                G)
                     ;;
 
             esac

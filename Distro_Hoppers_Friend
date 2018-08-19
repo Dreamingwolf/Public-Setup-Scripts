@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1.6-alpha
+# Version 0.1.7-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -16,33 +16,33 @@ else
 
     #Gather Basic Info
     	echo "What is your user name?: "
-	    read USENAM
+	    read -r USENAM
 
     #Auto Entry of Sudo Password in the Terminal
     	echo "Do you want to auto enter your sudo password when in a terminal? (Y/n): "
-	    read PASSWD
+	    read -r PASSWD
 
     #Dedicated Data/Home Partition
         echo "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): "
-	    read SEPDATA
+	    read -r SEPDATA
 
     #Determine Base Distro
         echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
         echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse, G-gentoo)?: "
-	    read DISTBASE
+	    read -r DISTBASE
     
     #Additional PPAs and/or Repositories
         echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): "
-	    read ADDREPO
+	    read -r ADDREPO
 
     #Snaps and Flatpaks
         echo "Would you like to enable Snaps and Flatpaks (Currently only for Ubuntu)?"
         echo "These are required for some of the Additional Software Installs (Y/n): "
-	    read SNAPFLAT
+	    read -r SNAPFLAT
 
     #Additional Software
         echo "Would you like to install additional software (Currently only for Ubuntu)? (Y/n): "
-	    read ADDAPPS
+	    read -r ADDAPPS
 
     #End of Gathering Info
 
@@ -65,9 +65,9 @@ else
             #Core Operations
                 PERMHOME=$HOME/.home
                 echo "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: "
-		read PERMDATA
+ 	            read -r PERMDATA
                 echo "What is the filesystem (i.e. ext4) of your data/home partition?: "
-		read UPDATEFSTAB
+		        read -r UPDATEFSTAB
                 PERMHOME=$( blkid -s UUID -o value "$PERMDATA" )
                 sudo echo "UUID=$PERMHOME $HOME/.home $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
     
@@ -77,8 +77,8 @@ else
 			
         	#Setup home folder
         		echo "Mounting, setting up, and linking home folder"
-                	echo "These folders are based on what I have, YMMV, you will need to manually remove/link"
-                	echo "any folders you use that I do not"
+            	echo "These folders are based on what I have, YMMV, you will need to manually remove/link"
+            	echo "any folders you use that I do not"
 	    		sudo mount "$PERMDATA" "$HOME/.home"
 			
     		#Remove original folders and set symbolic links
@@ -269,7 +269,7 @@ else
         then
                                 
             case $DISTBASE in
-                U)
+                U|u)
                     #Base Repos
                         sudo apt-add-repository -yn main
                         sudo apt-add-repository -yn restricted
@@ -515,22 +515,26 @@ else
 
                     ;;
 
-                A)
+                A|a)
                     ;;
 
-                C)
+                C|c)
                     ;;
 
-                D)
+                D|d)
                     ;;
 
-                F)
+                F|f)
                     ;;
 
-                O)
+                O|o)
                     ;;
 
-                G)
+                G|g)
+                    ;;
+
+                *)
+                    echo "Skipping this section due to faulty input"
                     ;;
 
             esac                        
@@ -542,29 +546,33 @@ else
         then
             echo "Installing Flatpak & Snaps"
             case $DISTBASE in
-                U)        
+                U|u)        
                         sudo apt update
                         sudo apt install flatpak -y
                         sudo apt install snapd -y
 
                     ;;
 
-                A)
+                A|a)
                     ;;
 
-                C)
+                C|c)
                     ;;
 
-                D)
+                D|d)
                     ;;
 
-                F)
+                F|f)
                     ;;
 
-                O)
+                O|o)
                     ;;
 
-                G)
+                G|g)
+                    ;;
+
+                *)
+                    echo "Skipping this section due to faulty input"
                     ;;
 
             esac                
@@ -636,7 +644,7 @@ else
             choices2=$("${cmd2[@]}" "${options2[@]}" 2>&1 >/dev/tty)
             clear
             case $DISTBASE in
-                U)
+                U|u)
                     sudo apt update
                 	sudo apt install dialog -y
 
@@ -711,6 +719,7 @@ else
                             #Ubuntu Restricted Extras
                             echo "Installing Ubuntu Restricted Extras"
                             sudo apt install ubuntu-restricted-extras -y
+                            sudo apt --fix-broken install -y
                             ;;
                         10)
                             #SMPlayer
@@ -940,7 +949,7 @@ else
                             echo "installing KXStudio Jack"
                             # Get user name for permissions
                             #echo "Enter your username"
-                            #read -pr 'Username: ' uservar
+                            #read -r -pr 'Username: ' uservar
                             # Install required dependencies if needed
                             sudo apt install apt-transport-https software-properties-common wget
                             wget https://launchpad.net/~kxstudio-debian/+archive/kxstudio/+files/kxstudio-repos_9.5.1~kxstudio3_all.deb
@@ -1112,22 +1121,26 @@ else
 
                     ;;
 
-                A)
+                A|a)
                     ;;
 
-                C)
+                C|c)
                     ;;
 
-                D)
+                D|d)
                     ;;
 
-                F)
+                F|f)
                     ;;
 
-                O)
+                O|o)
                     ;;
 
-                G)
+                G|g)
+                    ;;
+
+                *)
+                    echo "Skipping this section due to faulty input"
                     ;;
 
             esac

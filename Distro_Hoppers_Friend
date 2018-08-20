@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1.7-alpha
+# Version 0.1.8-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -30,6 +30,20 @@ else
         echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
         echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse, G-gentoo)?: "
 	    read -r DISTBASE
+        if [ "$DISTBASE" == 'U' ] || [ "$DISTBASE" == 'u' ]; then DISTBASE='U'; 
+        elif [ "$DISTBASE" == 'A' ] || [ "$DISTBASE" == 'a' ]; then DISTBASE='A'; 
+        elif [ "$DISTBASE" == 'C' ] || [ "$DISTBASE" == 'c' ]; then DISTBASE='C'; 
+        elif [ "$DISTBASE" == 'D' ] || [ "$DISTBASE" == 'd' ]; then DISTBASE='D'; 
+        elif [ "$DISTBASE" == 'F' ] || [ "$DISTBASE" == 'f' ]; then DISTBASE='F'; 
+        elif [ "$DISTBASE" == 'O' ] || [ "$DISTBASE" == 'o' ]; then DISTBASE='O'; 
+        elif [ "$DISTBASE" == 'G' ] || [ "$DISTBASE" == 'g' ]; then DISTBASE='G'; 
+        elif [ -z "$DISTBASE" ]; then
+            echo "I will assume Ubuntu"
+            DISTBASE='U';
+        else
+            echo "Bad input, the script will now terminate"
+            exit 1
+        fi
     
     #Additional PPAs and/or Repositories
         echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): "
@@ -269,7 +283,7 @@ else
         then
                                 
             case $DISTBASE in
-                U|u)
+                U)
                     #Base Repos
                         sudo apt-add-repository -yn main
                         sudo apt-add-repository -yn restricted
@@ -515,22 +529,22 @@ else
 
                     ;;
 
-                A|a)
+                A)
                     ;;
 
-                C|c)
+                C)
                     ;;
 
-                D|d)
+                D)
                     ;;
 
-                F|f)
+                F)
                     ;;
 
-                O|o)
+                O)
                     ;;
 
-                G|g)
+                G)
                     ;;
 
                 *)
@@ -546,29 +560,29 @@ else
         then
             echo "Installing Flatpak & Snaps"
             case $DISTBASE in
-                U|u)        
+                U)        
                         sudo apt update
                         sudo apt install flatpak -y
                         sudo apt install snapd -y
 
                     ;;
 
-                A|a)
+                A)
                     ;;
 
-                C|c)
+                C)
                     ;;
 
-                D|d)
+                D)
                     ;;
 
-                F|f)
+                F)
                     ;;
 
-                O|o)
+                O)
                     ;;
 
-                G|g)
+                G)
                     ;;
 
                 *)
@@ -644,7 +658,7 @@ else
             choices2=$("${cmd2[@]}" "${options2[@]}" 2>&1 >/dev/tty)
             clear
             case $DISTBASE in
-                U|u)
+                U)
                     sudo apt update
                 	sudo apt install dialog -y
 
@@ -1121,22 +1135,22 @@ else
 
                     ;;
 
-                A|a)
+                A)
                     ;;
 
-                C|c)
+                C)
                     ;;
 
-                D|d)
+                D)
                     ;;
 
-                F|f)
+                F)
                     ;;
 
-                O|o)
+                O)
                     ;;
 
-                G|g)
+                G)
                     ;;
 
                 *)

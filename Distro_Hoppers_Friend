@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.2.1-alpha
+# Version 0.2.2-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -75,9 +75,9 @@ else
         if [ "$PSSWD" == 'Y' ] || [ "$PSSWD" == 'y' ] || [ -z "$PSSWD" ]
         then
             echo "Adding NOPASSWD to sudoers file"
-	    	sudo echo "$USENAM ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+	    	echo "$USENAM ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
         else
-            sudo echo "$USENAM ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
+            echo "$USENAM ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
         fi
 	
 	#Seperate Home/Data Partition
@@ -283,7 +283,23 @@ else
                     fi
                     sudo ln -s "/home/$USENAM/.home/.thunderbird" "/home/$USENAM"
                 fi
-
+            #Setting up my personal desktop extra directories and hosts file
+                if [ "$USENAM" == 'david' ] && [ "$HOSTNAME" == 'Dragon01' ];
+                then
+                    echo "Fetching needed files"
+                    wget  https://github.com/Dreamingwolf/Setup-Scripts/raw/master/fstab_update
+                    wget  https://github.com/Dreamingwolf/Setup-Scripts/raw/master/Dragon01_hosts
+                    echo "Creating directories for mounting"
+                    sudo mkdir /StorageBunker
+                    sudo mkdir /Backup
+                    echo "Adding system drives to fstab"
+                    cat ./fstab_update | sudo tee -a /etc/fstab
+                    echo "Updating the hosts file"
+                    sudo cat ./Dragon01_hosts > /etc/hosts
+                    echo "Cleaning up"
+                    sudo rm ./Dragon01_hosts
+                    sudo rm ./fstab_update
+                fi
         fi
 
 	#Setting up additional PPAs and other Repositories

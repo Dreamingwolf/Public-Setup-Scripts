@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.1.8-alpha
+# Version 0.2.0.1-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -50,7 +50,7 @@ else
 	    read -r ADDREPO
 
     #Snaps and Flatpaks
-        echo "Would you like to enable Snaps and Flatpaks (Currently only for Ubuntu)?"
+        echo "Would you like to enable Snaps and Flatpaks (Currently only for Ubuntu and openSUSE)?"
         echo "These are required for some of the Additional Software Installs (Y/n): "
 	    read -r SNAPFLAT
 
@@ -77,203 +77,203 @@ else
         if [ "$SEPDATA" == 'Y' ] || [ "$SEPDATA" == 'y' ] || [ -z "$SEPDATA" ]
         then
             #Core Operations
-                PERMHOME=$HOME/.home
+                PERMHOME=/home/$USENAM/.home
                 echo "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: "
  	            read -r PERMDATA
                 echo "What is the filesystem (i.e. ext4) of your data/home partition?: "
 		        read -r UPDATEFSTAB
                 PERMHOME=$( blkid -s UUID -o value "$PERMDATA" )
-                sudo echo "UUID=$PERMHOME $HOME/.home $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
+                sudo echo "UUID=$PERMHOME /home/$USENAM/.home $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
     
             #Setup Directories for Mounting
         		echo "Creating directory for mounting"
-		        mkdir "$HOME/.home"
+		        mkdir "/home/$USENAM/.home"
 			
         	#Setup home folder
         		echo "Mounting, setting up, and linking home folder"
             	echo "These folders are based on what I have, YMMV, you will need to manually remove/link"
             	echo "any folders you use that I do not"
-	    		sudo mount "$PERMDATA" "$HOME/.home"
+	    		sudo mount "$PERMDATA" "/home/$USENAM/.home"
 			
     		#Remove original folders and set symbolic links
-    			if [ -d "$HOME/.home/Documents" ]
+    			if [ -d "/home/$USENAM/.home/Documents" ]
                 then
-                    if [ -d "$HOME/Documents" ]
+                    if [ -d "/home/$USENAM/Documents" ]
                     then
-                        sudo rm -Rf "$HOME/Documents"
+                        sudo rm -Rf "/home/$USENAM/Documents"
                     fi
-                    sudo ln -s "$HOME/.home/Documents" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Documents" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Downloads" ]
+	    		if [ -d "/home/$USENAM/.home/Downloads" ]
                 then
-                    if [ -d "$HOME/Downloads" ]
+                    if [ -d "/home/$USENAM/Downloads" ]
                         then
-                            sudo rm -Rf "$HOME/Downloads"
+                            sudo rm -Rf "/home/$USENAM/Downloads"
                         fi
-                    sudo ln -s "$HOME/.home/Downloads" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Downloads" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Etcher" ]
+	    		if [ -d "/home/$USENAM/.home/Etcher" ]
                 then
-                    if [ -d "$HOME/Etcher" ]
+                    if [ -d "/home/$USENAM/Etcher" ]
                     then
-                        sudo rm -Rf "$HOME/Etcher"
+                        sudo rm -Rf "/home/$USENAM/Etcher"
                     fi
-                    sudo ln -s "$HOME/.home/Etcher" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Etcher" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Games" ]
+	    		if [ -d "/home/$USENAM/.home/Games" ]
                 then
-                    if [ -d "$HOME/Games" ]
+                    if [ -d "/home/$USENAM/Games" ]
                     then
-                        sudo rm -Rf "$HOME/Games"
+                        sudo rm -Rf "/home/$USENAM/Games"
                     fi
-                    sudo ln -s "$HOME/.home/Games" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Games" "/home/$USENAM"
                 fi
 
-                if [ -d "$HOME/.home/Github" ]
+                if [ -d "/home/$USENAM/.home/Github" ]
                 then
-                    if [ -d "$HOME/Github" ]
+                    if [ -d "/home/$USENAM/Github" ]
                     then
-                        sudo rm -Rf "$HOME/Github"
+                        sudo rm -Rf "/home/$USENAM/Github"
                     fi
-                    sudo ln -s "$HOME/.home/Github" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Github" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Google_Drive" ]
+	    		if [ -d "/home/$USENAM/.home/Google_Drive" ]
                 then
-                    if [ -d "$HOME/Google_Drive" ]
+                    if [ -d "/home/$USENAM/Google_Drive" ]
                     then
-                        sudo rm -Rf "$HOME/Google_Drive"
+                        sudo rm -Rf "/home/$USENAM/Google_Drive"
                     fi
-                    sudo ln -s "$HOME/.home/Google_Drive" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Google_Drive" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Links" ]
+	    		if [ -d "/home/$USENAM/.home/Links" ]
                 then
-                    if [ -d "$HOME/Links" ]
+                    if [ -d "/home/$USENAM/Links" ]
                     then
-                        sudo rm -Rf "$HOME/Links"
+                        sudo rm -Rf "/home/$USENAM/Links"
                     fi
-                    sudo ln -s "$HOME/.home/Links" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Links" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Music" ]
+	    		if [ -d "/home/$USENAM/.home/Music" ]
                 then
-                    if [ -d "$HOME/Music" ]
+                    if [ -d "/home/$USENAM/Music" ]
                     then
-                        sudo rm -Rf "$HOME/Music"
+                        sudo rm -Rf "/home/$USENAM/Music"
                     fi
-                    sudo ln -s "$HOME/.home/Music" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Music" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Pictures" ]
+	    		if [ -d "/home/$USENAM/.home/Pictures" ]
                 then
-                    if [ -d "$HOME/Pictures" ]
+                    if [ -d "/home/$USENAM/Pictures" ]
                     then
-                        sudo rm -Rf "$HOME/Pictures"
+                        sudo rm -Rf "/home/$USENAM/Pictures"
                     fi
-                    sudo ln -s "$HOME/.home/Pictures" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Pictures" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Scripts" ]
+	    		if [ -d "/home/$USENAM/.home/Scripts" ]
                 then
-                    if [ -d "$HOME/Scripts" ]
+                    if [ -d "/home/$USENAM/Scripts" ]
                     then
-                        sudo rm -Rf "$HOME/Scripts"
+                        sudo rm -Rf "/home/$USENAM/Scripts"
                     fi
-                    sudo ln -s "$HOME/.home/Scripts" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Scripts" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Softmaker" ]
+	    		if [ -d "/home/$USENAM/.home/Softmaker" ]
                 then
-                    if [ -d "$HOME/Softmaker" ]
+                    if [ -d "/home/$USENAM/Softmaker" ]
                     then
-                        sudo rm -Rf "$HOME/Softmaker"
+                        sudo rm -Rf "/home/$USENAM/Softmaker"
                     fi
-                    sudo ln -s "$HOME/.home/Softmaker" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Softmaker" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Videos" ]
+	    		if [ -d "/home/$USENAM/.home/Videos" ]
                 then
-                    if [ -d "$HOME/Videos" ]
+                    if [ -d "/home/$USENAM/Videos" ]
                     then
-                        sudo rm -Rf "$HOME/Videos"
+                        sudo rm -Rf "/home/$USENAM/Videos"
                     fi
-                    sudo ln -s "$HOME/.home/Videos" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Videos" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/VPNac" ]
+	    		if [ -d "/home/$USENAM/.home/VPNac" ]
                 then
-                    if [ -d "$HOME/VPNac" ]
+                    if [ -d "/home/$USENAM/VPNac" ]
                     then
-                        sudo rm -Rf "$HOME/VPNac"
+                        sudo rm -Rf "/home/$USENAM/VPNac"
                     fi
-                    sudo ln -s "$HOME/.home/VPNac" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/VPNac" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Wallpapers" ]
+	    		if [ -d "/home/$USENAM/.home/Wallpapers" ]
                 then
-                    if [ -d "$HOME/Wallpapers" ]
+                    if [ -d "/home/$USENAM/Wallpapers" ]
                     then
-                        sudo rm -Rf "$HOME/Wallpapers"
+                        sudo rm -Rf "/home/$USENAM/Wallpapers"
                     fi
-                    sudo ln -s "$HOME/.home/Wallpapers" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Wallpapers" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/Working" ]
+	    		if [ -d "/home/$USENAM/.home/Working" ]
                 then
-                    if [ -d "$HOME/Working" ]
+                    if [ -d "/home/$USENAM/Working" ]
                     then
-                        sudo rm -Rf "$HOME/Working"
+                        sudo rm -Rf "/home/$USENAM/Working"
                     fi
-                    sudo ln -s "$HOME/.home/Working" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/Working" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/.gnupg" ]
+	    		if [ -d "/home/$USENAM/.home/.gnupg" ]
                 then
-                    if [ -d "$HOME/.gnupg" ]
+                    if [ -d "/home/$USENAM/.gnupg" ]
                     then
-                        sudo rm -Rf "$HOME/.gnupg"
+                        sudo rm -Rf "/home/$USENAM/.gnupg"
                     fi
-                    sudo ln -s "$HOME/.home/.gnupg" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/.gnupg" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/.mozilla" ]
+	    		if [ -d "/home/$USENAM/.home/.mozilla" ]
                 then
-                    if [ -d "$HOME/.mozilla" ]
+                    if [ -d "/home/$USENAM/.mozilla" ]
                     then
-                        sudo rm -Rf "$HOME/.mozilla"
+                        sudo rm -Rf "/home/$USENAM/.mozilla"
                     fi
-                    sudo ln -s "$HOME/.home/.mozilla" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/.mozilla" "/home/$USENAM"
                 fi
 
-                if [ -d "$HOME/.home/.ssh" ]
+                if [ -d "/home/$USENAM/.home/.ssh" ]
                 then
-                    if [ -d "$HOME/.ssh" ]
+                    if [ -d "/home/$USENAM/.ssh" ]
                     then
-                        sudo rm -Rf "$HOME/.ssh"
+                        sudo rm -Rf "/home/$USENAM/.ssh"
                     fi
-                    sudo ln -s "$HOME/.home/.ssh" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/.ssh" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/.steam" ]
+	    		if [ -d "/home/$USENAM/.home/.steam" ]
                 then
-                    if [ -d "$HOME/.steam" ]
+                    if [ -d "/home/$USENAM/.steam" ]
                     then
-                        sudo rm -Rf "$HOME/.steam"
+                        sudo rm -Rf "/home/$USENAM/.steam"
                     fi
-                    sudo ln -s "$HOME/.home/.steam" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/.steam" "/home/$USENAM"
                 fi
 
-	    		if [ -d "$HOME/.home/.thunderbird" ]
+	    		if [ -d "/home/$USENAM/.home/.thunderbird" ]
                 then
-                    if [ -d "$HOME/.thunderbird" ]
+                    if [ -d "/home/$USENAM/.thunderbird" ]
                     then
-                        sudo rm -Rf "$HOME/.thunderbird"
+                        sudo rm -Rf "/home/$USENAM/.thunderbird"
                     fi
-                    sudo ln -s "$HOME/.home/.thunderbird" "$HOME"
+                    sudo ln -s "/home/$USENAM/.home/.thunderbird" "/home/$USENAM"
                 fi
 
         fi
@@ -580,6 +580,10 @@ else
                     ;;
 
                 O)
+                    sudo zypper addrepo --refresh http://download.opensuse.org/repositories/system:/snappy/openSUSE_Tumbleweed/ snappy
+                    sudo zypper install snapd
+                    sudo systemctl enable --now snapd.socket
+                    sudo zypper install flatpak
                     ;;
 
                 G)

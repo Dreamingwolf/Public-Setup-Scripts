@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.2.2-alpha
+# Version 0.2.3-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -17,54 +17,53 @@ else
     #Gather Basic Info
     	echo "What is your user name?: "
 	    read -r USENAM
+        USENAM=${USENAM,,}
 
     #Auto Entry of Sudo Password in the Terminal
     	echo "Do you want to auto enter your sudo password when in a terminal? (Y/n): "
 	    read -r PASSWD
+        PASSWD=${PASSWD^}
 
     #Dedicated Data/Home Partition
         echo "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): "
 	    read -r SEPDATA
+        SEPDATA=${SEPDATA^}
 
     #Determine Base Distro
         echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
         echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse)?: "
 	    read -r DISTBASE
-        if [ "$DISTBASE" == 'U' ] || [ "$DISTBASE" == 'u' ]; then DISTBASE='U'; 
-        elif [ "$DISTBASE" == 'A' ] || [ "$DISTBASE" == 'a' ]; then DISTBASE='A'; 
-        elif [ "$DISTBASE" == 'C' ] || [ "$DISTBASE" == 'c' ]; then DISTBASE='C'; 
-        elif [ "$DISTBASE" == 'D' ] || [ "$DISTBASE" == 'd' ]; then DISTBASE='D'; 
-        elif [ "$DISTBASE" == 'F' ] || [ "$DISTBASE" == 'f' ]; then DISTBASE='F'; 
-        elif [ "$DISTBASE" == 'O' ] || [ "$DISTBASE" == 'o' ];
-            then
-                DISTBASE='O'
-                echo "Is it based on L-leap or T-tumbleweed?: "
-                read -r SUSESUB
-                if [ "$SUSESUB" == 'T' ] || [ "$SUSESUB" == 't' ]; then SUSESUB='T'
-                else 
-                    echo "Bad input so I will assume Leap"
-                    SUSESUB='L'
-                fi
-        elif [ -z "$DISTBASE" ]; then
+        DISTBASE=${DISTBASE^}
+        if [ -z "$DISTBASE" ]; then
             echo "I will assume Ubuntu"
             DISTBASE='U';
-        else
-            echo "Bad input, the script will now terminate"
-            exit 1
+        elif [ "$DISTBASE" == 'O' ];
+            then
+                echo "Is your distro based on L-leap or T-tumbleweed?"
+                read -r SUSESUB
+                SUSESUB=${SUSESUB^}
+                if [ "$SUSESUB" != 'T'];
+                    then
+                    echo "Assuming Leap as the base."
+                    SUSESUB='L'
+                fi
         fi
     
     #Additional PPAs and/or Repositories
         echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): "
 	    read -r ADDREPO
+        ADDREPO=${ADDREPO^}
 
     #Snaps and Flatpaks
         echo "Would you like to enable Snaps and Flatpaks?"
         echo "These are required for some of the Additional Software Installs (Y/n): "
 	    read -r SNAPFLAT
+        SNAPFLAT=${SNAPFLAT^}
 
     #Additional Software
         echo "Would you like to install additional software (Currently only for Ubuntu)? (Y/n): "
 	    read -r ADDAPPS
+        ADDAPPS=${ADDAPPS^}
 
     #End of Gathering Info
 
@@ -72,7 +71,7 @@ else
         echo "OK then, thats all I need for now, lets get started!"
 
 	#Updating Sudoers File to Add NOPASSWD to User
-        if [ "$PSSWD" == 'Y' ] || [ "$PSSWD" == 'y' ] || [ -z "$PSSWD" ]
+        if [[ "$PASSWD" == 'Y' || -z "$PASSWD" ]];
         then
             echo "Adding NOPASSWD to sudoers file"
 	    	echo "$USENAM ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
@@ -82,209 +81,131 @@ else
 	
 	#Seperate Home/Data Partition
 
-        if [ "$SEPDATA" == 'Y' ] || [ "$SEPDATA" == 'y' ] || [ -z "$SEPDATA" ]
+        if [[ "$SEPDATA" == 'Y' || -z "$SEPDATA" ]];
         then
             #Core Operations
                 PERMHOME=/home/$USENAM/.home
                 echo "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: "
  	            read -r PERMDATA
+                PERMDATA=${PERMDATA,,}
                 echo "What is the filesystem (i.e. ext4) of your data/home partition?: "
 		        read -r UPDATEFSTAB
-                PERMHOME=$( blkid -s UUID -o value "$PERMDATA" )
-                sudo echo "UUID=$PERMHOME /home/$USENAM/.home $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
+                PERMUUID=$( blkid -s UUID -o value "$PERMDATA" )
+                sudo echo "UUID=$PERMUUID $PERMHOME $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
     
             #Setup Directories for Mounting
         		echo "Creating directory for mounting"
-		        mkdir "/home/$USENAM/.home"
+		        mkdir $PERMHOME
 			
         	#Setup home folder
         		echo "Mounting, setting up, and linking home folder"
             	echo "These folders are based on what I have, YMMV, you will need to manually remove/link"
             	echo "any folders you use that I do not"
-	    		sudo mount "$PERMDATA" "/home/$USENAM/.home"
+	    		sudo mount $PERMDATA $PERMHOME
 			
     		#Remove original folders and set symbolic links
-    			if [ -d "/home/$USENAM/.home/Documents" ]
+    			if [ -d "$PERMHOME/Documents" ]
                 then
-                    if [ -d "/home/$USENAM/Documents" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Documents"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Documents" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Documents" ]; then sudo rm -Rf "/home/$USENAM/Documents"; fi
+                    sudo ln -s "$PERMHOME/Documents" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Downloads" ]
+	    		if [ -d "$PERMHOME/Downloads" ]
                 then
-                    if [ -d "/home/$USENAM/Downloads" ]
-                        then
-                            sudo rm -Rf "/home/$USENAM/Downloads"
-                        fi
-                    sudo ln -s "/home/$USENAM/.home/Downloads" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Downloads" ]; then sudo rm -Rf "/home/$USENAM/Downloads"; fi
+                    sudo ln -s "$PERMHOME/Downloads" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Etcher" ]
+	    		if [ -d "$PERMHOME/Etcher" ]
                 then
-                    if [ -d "/home/$USENAM/Etcher" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Etcher"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Etcher" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Etcher" ]; then sudo rm -Rf "/home/$USENAM/Etcher"; fi
+                    sudo ln -s "$PERMHOME/Etcher" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Games" ]
+	    		if [ -d "$PERMHOME/Games" ]
                 then
-                    if [ -d "/home/$USENAM/Games" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Games"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Games" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Games" ]; then sudo rm -Rf "/home/$USENAM/Games"; fi
+                    sudo ln -s "$PERMHOME/Games" "/home/$USENAM"
                 fi
-
-                if [ -d "/home/$USENAM/.home/Github" ]
+                if [ -d "$PERMHOME/Github" ]
                 then
-                    if [ -d "/home/$USENAM/Github" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Github"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Github" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Github" ]; then sudo rm -Rf "/home/$USENAM/Github"; fi
+                    sudo ln -s "$PERMHOME/Github" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Google_Drive" ]
+	    		if [ -d "$PERMHOME/Google_Drive" ]
                 then
-                    if [ -d "/home/$USENAM/Google_Drive" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Google_Drive"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Google_Drive" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Google_Drive" ]; then sudo rm -Rf "/home/$USENAM/Google_Drive"; fi
+                    sudo ln -s "$PERMHOME/Google_Drive" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Links" ]
+	    		if [ -d "$PERMHOME/Links" ]
                 then
-                    if [ -d "/home/$USENAM/Links" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Links"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Links" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Links" ]; then sudo rm -Rf "/home/$USENAM/Links"; fi
+                    sudo ln -s "$PERMHOME/Links" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Music" ]
+	    		if [ -d "$PERMHOME/Music" ]
                 then
-                    if [ -d "/home/$USENAM/Music" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Music"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Music" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Music" ]; then sudo rm -Rf "/home/$USENAM/Music"; fi
+                    sudo ln -s "$PERMHOME/Music" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Pictures" ]
+	    		if [ -d "$PERMHOME/Pictures" ]
                 then
-                    if [ -d "/home/$USENAM/Pictures" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Pictures"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Pictures" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Pictures" ]; then sudo rm -Rf "/home/$USENAM/Pictures"; fi
+                    sudo ln -s "$PERMHOME/Pictures" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Scripts" ]
+	    		if [ -d "$PERMHOME/Scripts" ]
                 then
-                    if [ -d "/home/$USENAM/Scripts" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Scripts"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Scripts" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Scripts" ]; then sudo rm -Rf "/home/$USENAM/Scripts"; fi
+                    sudo ln -s "$PERMHOME/Scripts" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Softmaker" ]
+	    		if [ -d "$PERMHOME/Softmaker" ]
                 then
-                    if [ -d "/home/$USENAM/Softmaker" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Softmaker"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Softmaker" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Softmaker" ]; then sudo rm -Rf "/home/$USENAM/Softmaker"; fi
+                    sudo ln -s "$PERMHOME/Softmaker" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Videos" ]
+	    		if [ -d "$PERMHOME/Videos" ]
                 then
-                    if [ -d "/home/$USENAM/Videos" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Videos"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Videos" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Videos" ]; then sudo rm -Rf "/home/$USENAM/Videos"; fi
+                    sudo ln -s "$PERMHOME/Videos" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/VPNac" ]
+	    		if [ -d "$PERMHOME/VPNac" ]
                 then
-                    if [ -d "/home/$USENAM/VPNac" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/VPNac"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/VPNac" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/VPNac" ]; then sudo rm -Rf "/home/$USENAM/VPNac"; fi
+                    sudo ln -s "$PERMHOME/VPNac" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Wallpapers" ]
+	    		if [ -d "$PERMHOME/Wallpapers" ]
                 then
-                    if [ -d "/home/$USENAM/Wallpapers" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Wallpapers"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Wallpapers" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Wallpapers" ]; then sudo rm -Rf "/home/$USENAM/Wallpapers"; fi
+                    sudo ln -s "$PERMHOME/Wallpapers" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/Working" ]
+	    		if [ -d "$PERMHOME/Working" ]
                 then
-                    if [ -d "/home/$USENAM/Working" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/Working"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/Working" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/Working" ]; then sudo rm -Rf "/home/$USENAM/Working"; fi
+                    sudo ln -s "$PERMHOME/Working" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/.gnupg" ]
+	    		if [ -d "$PERMHOME/.gnupg" ]
                 then
-                    if [ -d "/home/$USENAM/.gnupg" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/.gnupg"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/.gnupg" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/.gnupg" ]; then sudo rm -Rf "/home/$USENAM/.gnupg"; fi
+                    sudo ln -s "$PERMHOME/.gnupg" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/.mozilla" ]
+	    		if [ -d "$PERMHOME/.mozilla" ]
                 then
-                    if [ -d "/home/$USENAM/.mozilla" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/.mozilla"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/.mozilla" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/.mozilla" ]; then sudo rm -Rf "/home/$USENAM/.mozilla"; fi
+                    sudo ln -s "$PERMHOME/.mozilla" "/home/$USENAM"
                 fi
-
-                if [ -d "/home/$USENAM/.home/.ssh" ]
+                if [ -d "$PERMHOME/.ssh" ]
                 then
-                    if [ -d "/home/$USENAM/.ssh" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/.ssh"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/.ssh" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/.ssh" ]; then sudo rm -Rf "/home/$USENAM/.ssh"; fi
+                    sudo ln -s "$PERMHOME/.ssh" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/.steam" ]
+	    		if [ -d "$PERMHOME/.steam" ]
                 then
-                    if [ -d "/home/$USENAM/.steam" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/.steam"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/.steam" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/.steam" ]; then sudo rm -Rf "/home/$USENAM/.steam"; fi
+                    sudo ln -s "$PERMHOME/.steam" "/home/$USENAM"
                 fi
-
-	    		if [ -d "/home/$USENAM/.home/.thunderbird" ]
+	    		if [ -d "$PERMHOME/.thunderbird" ]
                 then
-                    if [ -d "/home/$USENAM/.thunderbird" ]
-                    then
-                        sudo rm -Rf "/home/$USENAM/.thunderbird"
-                    fi
-                    sudo ln -s "/home/$USENAM/.home/.thunderbird" "/home/$USENAM"
+                    if [ -d "/home/$USENAM/.thunderbird" ]; then sudo rm -Rf "/home/$USENAM/.thunderbird"; fi
+                    sudo ln -s "$PERMHOME/.thunderbird" "/home/$USENAM"
                 fi
             #Setting up my personal desktop extra directories and hosts file
-                if [ "$USENAM" == 'david' ] && [ "$HOSTNAME" == 'Dragon01' ];
+                if [[ "$USENAM" == 'david' && "$HOSTNAME" == 'Dragon01' ]];
                 then
                     echo "Fetching needed files"
                     wget  https://github.com/Dreamingwolf/Setup-Scripts/raw/master/fstab_update
@@ -303,9 +224,8 @@ else
         fi
 
 	#Setting up additional PPAs and other Repositories
-        if [ "$ADDREPO" == 'Y' ] || [ "$ADDREPO" == 'y' ] || [ -z "$ADDREPO" ];
+        if [[ "$ADDREPO" == 'Y' || -z "$ADDREPO" ]];
         then
-                                
             case $DISTBASE in
                 U)
                     #Base Repos
@@ -577,7 +497,7 @@ else
         fi
 
     #Snaps and Flatpaks
-        if [ "$SNAPFLAT" == 'Y' ] || [ "$SNAPFLAT" == 'y' ] || [ -z "$SNAPFLAT" ]
+        if [[ "$SNAPFLAT" == 'Y' || -z "$SNAPFLAT" ]];
         then
             echo "Installing Flatpak & Snaps"
             case $DISTBASE in
@@ -643,7 +563,7 @@ else
         fi
 
     #Additional Software Installation
-        if [ "$ADDAPPS" == 'Y' ] || [ "$ADDAPPS" == 'y' ] || [ -z "$ADDAPPS" ]
+        if [[ "$ADDAPPS" == 'Y' || -z "$ADDAPPS" ]];
         then
             echo "Installing Additional Software"
             cmd2=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)

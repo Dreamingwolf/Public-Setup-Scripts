@@ -1,7 +1,7 @@
 #!/bin/bash
 # Distro Hopper's Friend
 # David F Muller
-# Version 0.2.4.1-alpha
+# Version 0.2.5-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -221,6 +221,8 @@ else
                     sudo rm ./Dragon01_hosts
                     sudo rm ./fstab_update
                 fi
+            #Assuring ownership of the new links
+                sudo chown -R $USENAM:$USENAM /home/$USENAM
         fi
 
 	#Setting up additional PPAs and other Repositories
@@ -233,6 +235,7 @@ else
                         sudo apt-add-repository -yn restricted
                         sudo apt-add-repository -yn universe
                         sudo apt-add-repository -yn multiverse
+                        sudo apt install -y curl
 
                     #PPAs
 
@@ -292,6 +295,7 @@ else
                                         #Daniel Richter
                                         echo "Installing Daniel Richter's PPA for grub-customizer"
                                         sudo add-apt-repository -yn ppa:danielrichter2007/grub-customizer
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/danielrichter2007*; fi
                                         ;;
 
                                     3)	
@@ -344,12 +348,14 @@ else
                                         #Thunderbird Beat
                                         echo "Installing PPA for Thunderbird Beta. Install as thunderbird."
                                         sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
                                         ;;
 
                                     11)
                                         #OBS Project
                                         echo "Installing OBSProject PPA"
                                         sudo add-apt-repository -yn ppa:obsproject/obs-studio
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                         ;;
 
                                     12)
@@ -363,6 +369,7 @@ else
                                         #Peppermint 9
                                         echo "Installing Release PPA for Peppermint 9 OS"
                                         sudo add-apt-repository -yn ppa:peppermintos/p9-release
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/peppermint*; fi
                                         ;;
 
                                     14)
@@ -381,8 +388,8 @@ else
                                     16)
                                         #Virtualbox
                                         echo "Installing Virtualbox Repository"
-                                        wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
-                                        wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+                                        wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
+                                        wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                         sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
                                         ;;
 
@@ -399,12 +406,14 @@ else
                                         #Need to expand later for multiple choice within WebUpd8's repos
                                         echo "Installing WebUpd8 PPA for PPA Manager"
                                         sudo add-apt-repository -yn ppa:webupd8team/y-ppa-manager
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/webupd8team*; fi
                                         ;;
                                         
                                     19)
                                         #XFCE - xubuntu-dev-extra
                                         echo "Installing xubuntu-dev-extras for XFCE"
                                         sudo add-apt-repository -yn ppa:xubuntu-dev/extras
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/xubuntu-dev-ubuntu-extras*; fi
                                         ;;
 
                                     20)
@@ -427,21 +436,25 @@ else
                                     23)
                                         #Sarnex - Wine + Gallium Nine
                                         sudo add-apt-repository -yn ppa:commendsarnex/winedri3
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/commendsarnex*; fi
                                         ;;
 
                                     24)
                                         #Maarten Baert - simplescreenrecorder
                                         sudo add-apt-repository -yn ppa:maarten-baert/simplescreenrecorder
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/maarten-baert*; fi
                                         ;;
                                     
                                     25)
                                         #RVM - smplayer gtk
                                         sudo add-apt-repository -yn ppa:rvm/smplayer
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
                                         ;;
                                     
                                     26)
                                         #RVM - smplayer qt4
                                         sudo add-apt-repository -yn ppa:rvm/smplayer-qt4
+                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
                                         ;;
                                     
                                     27)	
@@ -685,7 +698,7 @@ else
                         8)
                             #Elementary OS Tweaks
                             echo "Installing Elementary Tweaks"
-                            sudo apt install software-properties-common
+                            sudo apt install software-properties-common -y
                             sudo apt update
                             sudo apt install elementary-tweaks -y
                             ;;
@@ -751,11 +764,13 @@ else
                             #OBS Studio
                             echo "Installing OBS Studio"
                             sudo apt install ffmpeg -y
-                            if [ -e /etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-"$(lsb_release -sc)".list ];
+                            if [ -e /etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-"$(lsc_release -sc)".list ];
                             then
+                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                 sudo apt install obs-studio -y
                             else
                                 sudo add-apt-repository ppa:obsproject/obs-studio
+                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                 sudo apt update && sudo apt install obs-studio -y
                             fi
                             ;;
@@ -780,8 +795,8 @@ else
                                 sudo apt install -y gcc make linux-headers-"$(uname -r)" dkms
                                 sudo apt install virtualbox-5.2 -y
                             else
-                                wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -
-                                wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add -
+                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
+                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                 sudo sh -c 'echo deb http://download.virtualbox.org/virtualbox/debian "$(lsb_release -sc)" contrib | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
                                 sudo apt -y install gcc make "linux-headers-$(uname -r)" dkms
                                 sudo apt install virtualbox-5.2 -y
@@ -969,11 +984,13 @@ else
                         42)	
                             #Install Mozilla Thunderbird
                             echo "Installing Thunderbird"
-                            if [ -e "/etc/apt/sources.list.d/mozillateam-ubuntu-thunderbird-next-$(lsb_release -sc).list" ];
+                            if [ -e /etc/apt/sources.list.d/mozillateam-ubuntu-thunderbird-next-"$(lsb_release -sc)".list ];
                             then
+                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
                                 sudo apt install thunderbird -y
                             else
                                 sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
+                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
                                 sudo apt update && sudo apt install thunderbird -y
                             fi
                             ;;
@@ -982,6 +999,9 @@ else
                             #Install Softmaker Office 2016
                             echo "Installing Softmaker Office 2016"
                             'cd ~/Downloads || return'
+##*******
+#MUST ADD DEPENDENCIES TO KEEP SCRIPT FROM CRASHING!!!
+##*******
                             wget http://www.softmaker.net/down/softmaker-office-2016_761-01_i386.deb
                             sudo dpkg -i softmaker-office-2016_761-01_i386.deb
                             sudo rm ./softmaker-office-2016_761-01_i386.deb

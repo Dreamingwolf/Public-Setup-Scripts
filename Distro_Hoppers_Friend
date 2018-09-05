@@ -184,6 +184,11 @@ else
                     if [ -d "/home/$USENAM/.gnupg" ]; then sudo rm -Rf "/home/$USENAM/.gnupg"; fi
                     sudo ln -s "$PERMHOME/.gnupg" "/home/$USENAM"
                 fi
+                if [ -d "$PERMHOME/.gdfuse" ]
+                then
+                    if [ -d "/home/$USENAM/.gdfuse" ]; then sudo rm -Rf "/home/$USENAM/.gdfuse"; fi
+                    sudo ln -s "$PERMHOME/.gdfuse" "/home/$USENAM"
+                fi
 	    		if [ -d "$PERMHOME/.mozilla" ]
                 then
                     if [ -d "/home/$USENAM/.mozilla" ]; then sudo rm -Rf "/home/$USENAM/.mozilla"; fi

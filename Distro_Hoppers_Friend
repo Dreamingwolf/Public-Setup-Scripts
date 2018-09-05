@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.2.5-alpha
+# Version 0.2.6-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -407,6 +407,7 @@ else
                                         wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
                                         wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                         sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+					if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/virtualbox*; fi
                                         ;;
 
                                     17)
@@ -531,7 +532,8 @@ else
             echo "Installing Flatpak & Snaps"
             case $DISTBASE in
                 U)
-                    sudo add-apt-repository -yn ppa:alexlarsson/flatpak       
+                    sudo add-apt-repository -yn ppa:alexlarsson/flatpak
+		    if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
                     sudo apt update
                     sudo apt install flatpak -y
                     sudo apt install snapd -y
@@ -550,7 +552,8 @@ else
                     ;;
 
                 D)
-                    sudo add-apt-repository -yn ppa:alexlarsson/flatpak       
+                    sudo add-apt-repository -yn ppa:alexlarsson/flatpak
+		    if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
                     sudo apt update
                     sudo apt install flatpak -y
                     sudo apt install snapd -y
@@ -774,13 +777,14 @@ else
                             else
                                 sudo add-apt-repository -yn ppa:otto-kesselgulasch/gimp
                                 sudo apt update && sudo apt install gimp -y
+				sudo apt --fix-broken install -y
                             fi
                             ;;
                         16)
                             #OBS Studio
                             echo "Installing OBS Studio"
                             sudo apt install ffmpeg -y
-                            if [ -e /etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-"$(lsc_release -sc)".list ];
+                            if [ -e "/etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-$(lsb_release -sc).list" ];
                             then
                                 if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                 sudo apt install obs-studio -y
@@ -1015,10 +1019,13 @@ else
                             #Install Softmaker Office 2016
                             echo "Installing Softmaker Office 2016"
                             'cd ~/Downloads || return'
-##*******
-#MUST ADD DEPENDENCIES TO KEEP SCRIPT FROM CRASHING!!!
-##*******
                             wget http://www.softmaker.net/down/softmaker-office-2016_761-01_i386.deb
+			    #Install Dependencies
+                            sudo dpkg --add-architecture i386
+                            sudo apt install -y gcc-8-base:i386 libbsd0:i386 libc6:i386 libdrm-amdgpu1:i386 libdrm-intel1:i386 libdrm-nouveau2:i386 libdrm-radeon1:i386 libdrm2:i386 libedit2:i386 libelf1:i386 libexpat1:i386 libffi6:i386 libgcc1:i386 libgl1:i386
+                            sudo apt install -y libgl1-mesa-dri:i386 libgl1-mesa-glx:i386 libglapi-mesa:i386 libglvnd0:i386 libglx-mesa0:i386 libglx0:i386 libice6:i386 libidn11:i386 libidn2-0:i386 libllvm6.0:i386 libpciaccess0:i386 libsensors4:i386 libsm6:i386
+                            sudo apt install -y libstdc++6:i386 libtinfo6:i386 libunistring2:i386 libuuid1:i386 libx11-6:i386 libx11-xcb1:i386 libxau6:i386 libxcb-dri2-0:i386 libxcb-dri3-0:i386 libxcb-glx0:i386 libxcb-present0:i386 libxcb-sync1:i386 libxcb1:i386
+                            sudo apt install -y libxdamage1:i386 libxdmcp6:i386 libxext6:i386 libxfixes3:i386 libxmu6:i386 libxrandr2:i386 libxrender1:i386 libxshmfence1:i386 libxt6:i386 libxxf86vm1:i386 zlib1g:i386
                             sudo dpkg -i softmaker-office-2016_761-01_i386.deb
                             sudo rm ./softmaker-office-2016_761-01_i386.deb
                             ;;

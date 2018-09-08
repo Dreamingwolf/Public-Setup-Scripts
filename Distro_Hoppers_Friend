@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.2.6-alpha
+# Version 0.3.0-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -58,10 +58,14 @@ else
                     echo "Assuming Leap as the base."
                     SUSESUB='L'
                 fi
+        elif [ "$DISTBASE" == 'F' ];
+            then
+                echo "Which version # of Fedora? (i.e. 27 or 28)"
+                read -r FEDSUB
         fi
     
     #Additional PPAs and/or Repositories
-        echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu)? (Y/n): "
+        echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): "
 	    read -r ADDREPO
         ADDREPO=${ADDREPO^}
 
@@ -407,7 +411,7 @@ else
                                         wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
                                         wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                         sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
-					if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/virtualbox*; fi
+					                    if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/virtualbox*; fi
                                         ;;
 
                                     17)
@@ -510,9 +514,105 @@ else
                     ;;
 
                 D)
+                    sudo apt install dialog
+                    cmd1=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
+                    options1=(1 "Firefox-Nightly" off    # any option can be set to default to "on"
+                        2 "deb-multimedia" off 
+                        3 "Virtualbox" off
+                        4 "Lutris" off
+ 
+                    choices1=$("${cmd1[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                    clear
+                    for choice1 in $choices1;
+                    do                   
+                        case $choice1 in
+                          
+                            1)
+                                #Firefox-Nightly
+                                echo "Installing Firefox-Nightly Repository"
+                                wget -O - http://v.s.cz/info@vitexsoftware.cz.gpg.key | sudo apt-key add -
+                                echo "deb http://v.s.cz/ stable main" | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
+                                ;;
+
+                            2)
+                                #Deb-Multimedia
+                                echo "Installing Deb-Multimedia Repository"
+                                if [[ "$(lsb_release -sc)" == 'jessie' || "$(lsb_release -sc)" == 'wheezy' ]];
+                                    then sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list';
+                                else sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main non-free" | sudo tee -a /etc/apt/sources.list';
+                                fi
+                                ;;
+
+                            3)	
+                                #Virtualbox
+                                echo "Installing Virtualbox Repository"
+                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
+                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
+                                sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+    		                    if [ $(lsb_release -sc) == "buster" ]; then sudo sed -i 's/buster/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
+                                if [ $(lsb_release -sc) == "sid" ]; then sudo sed -i 's/sid/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
+                                ;;
+                                
+                            4)
+                                #Lutris
+                                echo "Installing Lutris Repository"
+                                echo "deb http://download.opensuse.org/repositories/home:/strycore/Debian_9.0/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                                wget -q http://download.opensuse.org/repositories/home:/strycore/Debian_9.0/Release.key -O- | sudo apt-key add -
+                                ;;
+
+                        esac
+                    done
+
+                    # Updating the Cache after all PPAs have been set up.
+                        echo "Updating the Apt Cache."
+                        sudo apt update
                     ;;
 
                 F)
+                    sudo apt install dialog
+                    cmd1=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
+                    options1=(1 "fedora-workstation-repositories (PyCharm, Google Chrome, Nvidia drivers fedora28+, Steam client fedora28+" off    # any option can be set to default to "on"
+                        2 "RPM Fusion" off 
+                        3 "Virtualbox" off
+                        4 "Lutris" off
+ 
+                    choices1=$("${cmd1[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                    clear
+                    for choice1 in $choices1;
+                    do                   
+                        case $choice1 in
+                          
+                            1)
+                                #fedora-workstation-repositories
+                                echo "Installing fedora-workstation-repositories"
+                                sudo dnf -y remove google-chrome-release
+                                sudo dnf -y install fedora-workstation-repositories
+                                ;;
+
+                            2)
+                                #RPM Fusion
+                                echo "Installing RPM Fusion"
+                                sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+                                ;;
+                            3)	
+                                #Virtualbox
+                                echo "Installing Virtualbox Repository"
+                                sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | rpm --import -
+                                sudo wget -q https://download.virtualbox.org/virtualbox/rpm/fedora/virtualbox.repo -O /etc/yum.repos.d/virtualbox.repo
+                                ;;
+                                
+                            4)
+                                #Lutris
+                                echo "Installing Lutris repo"
+                                sudo dnf config-manager --add-repo "https://download.opensuse.org/repositories/home:strycore/Fedora_$FEDSUB/home:strycore.repo"
+                                ;;
+
+                        esac
+                    done
+
+                    # Updating the Cache after all PPAs have been set up.
+                        echo "Updating the dnf Cache."
+                        sudo dnf check-update
                     ;;
 
                 O)
@@ -533,10 +633,8 @@ else
             case $DISTBASE in
                 U)
                     sudo add-apt-repository -yn ppa:alexlarsson/flatpak
-		    if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
-                    sudo apt update
-                    sudo apt install flatpak -y
-                    sudo apt install snapd -y
+		            if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
+                    sudo apt update && sudo apt -y install flatpak snapd
                     ;;
 
                 A)
@@ -552,17 +650,13 @@ else
                     ;;
 
                 D)
-                    sudo add-apt-repository -yn ppa:alexlarsson/flatpak
-		    if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
-                    sudo apt update
-                    sudo apt install flatpak -y
-                    sudo apt install snapd -y
+                    sudo apt update && sudo apt -y install flatpak snapd
                     ;;
 
                 F)
-                    sudo dnf install snapd
+                    sudo dnf -y install snapd
                     sudo ln -s /var/lib/snapd/snap /snap
-                    sudo dnf install flatpak
+                    sudo dnf -y install flatpak
                     ;;
 
                 O)

@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.3.0-alpha
+# Version 0.3.1-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -28,6 +28,10 @@ else
     #Gather Basic Info
     	echo "What is your user name?: "
 	    read -r USENAM
+        if [ "$USENAM" != "$USER" ]; then
+            echo "There was a mismatch in usernames that will cause issues...script will now exit"
+            exit 1
+        fi
         USENAM=${USENAM,,}
 
     #Auto Entry of Sudo Password in the Terminal

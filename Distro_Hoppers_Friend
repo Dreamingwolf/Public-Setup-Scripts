@@ -232,19 +232,35 @@ else
                 if [[ "$USENAM" == 'david' && "$HOSTNAME" == 'Dragon01' ]];
                 then
                     echo "Fetching needed files"
-                    wget  https://github.com/Dreamingwolf/Setup-Scripts/raw/master/fstab_update
                     wget  https://github.com/Dreamingwolf/Setup-Scripts/raw/master/Dragon01_hosts
                     echo "Creating directories for mounting"
                     sudo mkdir /StorageBunker
                     sudo mkdir /Backup
-                    echo "Adding system drives to fstab"
-                    cat ./fstab_update | sudo tee -a /etc/fstab
+                    #Core Operations
+                        HOMEPART=/home/david/.home
+                        HOMEDATA=/dev/nvme0n1p1
+                        HOMEFSTAB=$( blkid -s TYPE -o value "$HOMEDATA" )
+                        HOMEUUID=$( blkid -s UUID -o value "$HOMEDATA" )
+                        
+                        BACKUPDATA=$( blkid -L Backup )
+                        BACKUPFSTAB=$( blkid -s TYPE -o value "$BACKUPDATA" )
+                        BACKUPUUID=$( blkid -s UUID -o value "$BACKUPDATA" )
+
+                        STORAGEDATA=$( blkid -L StorageBunker )
+                        STORAGEFSTAB=$( blkid -s TYPE -o value "$STORAGEDATA" )
+                        STORAGEUUID=$( blkid -s UUID -o value "$STORAGEDATA" )
+
+                    #Updating /etc/fstab
+                        echo "Adding disks to /etc/fstab"
+                        echo "UUID=$HOMEUUID $HOMEPART $HOMEFSTAB users,exec,rw,auto,noatime 0 2
+                        UUID=$BACKUPUUID /Backup $BACKUPFSTAB users,exec,rw,auto,noatime,uid=$( id -u david ),gid=$( id -g david ) 0 2
+                        UUID=$STORAGEUUID /StorageBunker $STORAGEFSTAB users,exec,rw,auto,noatime,uid=$( id -u david ),gid=$( id -g david ) 0 2" | sudo tee -a /etc/fstab
+
                     echo "Updating the hosts file"
-                    sudo cat ./Dragon01_hosts > /etc/hosts
+                    sudo mv -f ./Dragon01_hosts /etc/hosts
                     echo "Cleaning up"
                     sudo rm ./Dragon01_hosts
-                    sudo rm ./fstab_update
-                fi
+                 fi
             #Assuring ownership of the new links
                 sudo chown -R $USENAM:$USENAM /home/$USENAM
         fi

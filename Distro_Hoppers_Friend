@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.3.1-alpha
+# Version 0.3.2-alpha
 
 if [ $EUID -ne 0 ]
 then
@@ -227,6 +227,21 @@ else
                 then
                     if [ -d "/home/$USENAM/.thunderbird" ]; then sudo rm -Rf "/home/$USENAM/.thunderbird"; fi
                     sudo ln -s "$PERMHOME/.thunderbird" "/home/$USENAM"
+                fi
+                if [ -d "$PERMHOME/.vscode" ]
+                then
+                    if [ -d "/home/$USENAM/.vscode" ]; then sudo rm -Rf "/home/$USENAM/.vscode"; fi
+                    sudo ln -s "$PERMHOME/.vscode" "/home/$USENAM"
+                fi
+                if [ -d "$PERMHOME/.zoom" ]
+                then
+                    if [ -d "/home/$USENAM/.zoom" ]; then sudo rm -Rf "/home/$USENAM/.zoom"; fi
+                    sudo ln -s "$PERMHOME/.zoom" "/home/$USENAM"
+                fi
+                if [ -f "$PERMHOME/.pam-gnupg" ]
+                then
+                    if [ -f "/home/$USENAM/.pam-gnupg" ]; then sudo rm -f "/home/$USENAM/.pam-gnupg"; fi
+                    sudo ln -s "$PERMHOME/.pam-gnupg" "/home/$USENAM"
                 fi
             #Setting up my personal desktop extra directories and hosts file
                 if [[ "$USENAM" == 'david' && "$HOSTNAME" == 'Dragon01' ]];

@@ -12,18 +12,15 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.3.2-alpha
+# Version 0.5-alpha
 
-if [ $EUID -ne 0 ]
-then
-   	echo "This script must be run as with root privilege (NOT AS ROOT), type: sudo ./Distro_Hoppers_Friend" 
-   	exit 1
-else
+
 	echo "Welcome to the Distro Hopper's Friend"
     echo "If you have any doubts about me or this script, please review the code before running"
     echo "(You really should do this anyway! ;-) )"
     echo
     echo "OK then, let's get started!"
+    read -r -s -p "Please enter sudo password (required for certain commands in this script): " "SUDOPWD" && printf "\n"
 
     #Gather Basic Info
     	echo "What is your user name?: "
@@ -57,7 +54,7 @@ else
                 echo "Is your distro based on L-leap or T-tumbleweed?"
                 read -r SUSESUB
                 SUSESUB=${SUSESUB^}
-                if [ "$SUSESUB" != 'T'];
+                if [ "$SUSESUB" != 'T' ];
                     then
                     echo "Assuming Leap as the base."
                     SUSESUB='L'
@@ -93,9 +90,9 @@ else
         if [[ "$PASSWD" == 'Y' || -z "$PASSWD" ]];
         then
             echo "Adding NOPASSWD to sudoers file"
-	    	echo "$USENAM ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+            echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-install"
         else
-            echo "$USENAM ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers
+            echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-install"
         fi
 	
 	#Seperate Home/Data Partition
@@ -114,13 +111,13 @@ else
     
             #Setup Directories for Mounting
         		echo "Creating directory for mounting"
-		        mkdir $PERMHOME
+		        mkdir "$PERMHOME"
 			
         	#Setup home folder
         		echo "Mounting, setting up, and linking home folder"
-            	echo "These folders are based on what I have, YMMV, you will need to manually remove/link"
+            	echo "These are basic folders based on what I have, YMMV, you will need to manually remove/link"
             	echo "any folders you use that I do not"
-	    		sudo mount $PERMDATA $PERMHOME
+	    		sudo mount "$PERMDATA" "$PERMHOME"
 			
     		#Remove original folders and set symbolic links
     			if [ -d "$PERMHOME/Documents" ]
@@ -133,11 +130,6 @@ else
                     if [ -d "/home/$USENAM/Downloads" ]; then sudo rm -Rf "/home/$USENAM/Downloads"; fi
                     sudo ln -s "$PERMHOME/Downloads" "/home/$USENAM"
                 fi
-	    		if [ -d "$PERMHOME/Etcher" ]
-                then
-                    if [ -d "/home/$USENAM/Etcher" ]; then sudo rm -Rf "/home/$USENAM/Etcher"; fi
-                    sudo ln -s "$PERMHOME/Etcher" "/home/$USENAM"
-                fi
 	    		if [ -d "$PERMHOME/Games" ]
                 then
                     if [ -d "/home/$USENAM/Games" ]; then sudo rm -Rf "/home/$USENAM/Games"; fi
@@ -147,11 +139,6 @@ else
                 then
                     if [ -d "/home/$USENAM/Github" ]; then sudo rm -Rf "/home/$USENAM/Github"; fi
                     sudo ln -s "$PERMHOME/Github" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Google_Drive" ]
-                then
-                    if [ -d "/home/$USENAM/Google_Drive" ]; then sudo rm -Rf "/home/$USENAM/Google_Drive"; fi
-                    sudo ln -s "$PERMHOME/Google_Drive" "/home/$USENAM"
                 fi
 	    		if [ -d "$PERMHOME/Links" ]
                 then
@@ -168,35 +155,10 @@ else
                     if [ -d "/home/$USENAM/Pictures" ]; then sudo rm -Rf "/home/$USENAM/Pictures"; fi
                     sudo ln -s "$PERMHOME/Pictures" "/home/$USENAM"
                 fi
-	    		if [ -d "$PERMHOME/Scripts" ]
-                then
-                    if [ -d "/home/$USENAM/Scripts" ]; then sudo rm -Rf "/home/$USENAM/Scripts"; fi
-                    sudo ln -s "$PERMHOME/Scripts" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Softmaker" ]
-                then
-                    if [ -d "/home/$USENAM/Softmaker" ]; then sudo rm -Rf "/home/$USENAM/Softmaker"; fi
-                    sudo ln -s "$PERMHOME/Softmaker" "/home/$USENAM"
-                fi
 	    		if [ -d "$PERMHOME/Videos" ]
                 then
                     if [ -d "/home/$USENAM/Videos" ]; then sudo rm -Rf "/home/$USENAM/Videos"; fi
                     sudo ln -s "$PERMHOME/Videos" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/VPNac" ]
-                then
-                    if [ -d "/home/$USENAM/VPNac" ]; then sudo rm -Rf "/home/$USENAM/VPNac"; fi
-                    sudo ln -s "$PERMHOME/VPNac" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Wallpapers" ]
-                then
-                    if [ -d "/home/$USENAM/Wallpapers" ]; then sudo rm -Rf "/home/$USENAM/Wallpapers"; fi
-                    sudo ln -s "$PERMHOME/Wallpapers" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Working" ]
-                then
-                    if [ -d "/home/$USENAM/Working" ]; then sudo rm -Rf "/home/$USENAM/Working"; fi
-                    sudo ln -s "$PERMHOME/Working" "/home/$USENAM"
                 fi
 	    		if [ -d "$PERMHOME/.gnupg" ]
                 then
@@ -228,12 +190,7 @@ else
                     if [ -d "/home/$USENAM/.thunderbird" ]; then sudo rm -Rf "/home/$USENAM/.thunderbird"; fi
                     sudo ln -s "$PERMHOME/.thunderbird" "/home/$USENAM"
                 fi
-                if [ -d "$PERMHOME/.vscode" ]
-                then
-                    if [ -d "/home/$USENAM/.vscode" ]; then sudo rm -Rf "/home/$USENAM/.vscode"; fi
-                    sudo ln -s "$PERMHOME/.vscode" "/home/$USENAM"
-                fi
-                if [ -d "$PERMHOME/.zoom" ]
+                 if [ -d "$PERMHOME/.zoom" ]
                 then
                     if [ -d "/home/$USENAM/.zoom" ]; then sudo rm -Rf "/home/$USENAM/.zoom"; fi
                     sudo ln -s "$PERMHOME/.zoom" "/home/$USENAM"
@@ -243,41 +200,9 @@ else
                     if [ -f "/home/$USENAM/.pam-gnupg" ]; then sudo rm -f "/home/$USENAM/.pam-gnupg"; fi
                     sudo ln -s "$PERMHOME/.pam-gnupg" "/home/$USENAM"
                 fi
-            #Setting up my personal desktop extra directories and hosts file
-                if [[ "$USENAM" == 'david' && "$HOSTNAME" == 'Dragon01' ]];
-                then
-                    echo "Fetching needed files"
-                    wget  https://github.com/Dreamingwolf/Setup-Scripts/raw/master/Dragon01_hosts
-                    echo "Creating directories for mounting"
-                    sudo mkdir /StorageBunker
-                    sudo mkdir /Backup
-                    #Core Operations
-                        HOMEPART=/home/david/.home
-                        HOMEDATA=/dev/nvme0n1p1
-                        HOMEFSTAB=$( blkid -s TYPE -o value "$HOMEDATA" )
-                        HOMEUUID=$( blkid -s UUID -o value "$HOMEDATA" )
-                        
-                        BACKUPDATA=$( blkid -L Backup )
-                        BACKUPFSTAB=$( blkid -s TYPE -o value "$BACKUPDATA" )
-                        BACKUPUUID=$( blkid -s UUID -o value "$BACKUPDATA" )
 
-                        STORAGEDATA=$( blkid -L StorageBunker )
-                        STORAGEFSTAB=$( blkid -s TYPE -o value "$STORAGEDATA" )
-                        STORAGEUUID=$( blkid -s UUID -o value "$STORAGEDATA" )
-
-                    #Updating /etc/fstab
-                        echo "Adding disks to /etc/fstab"
-                        echo "UUID=$HOMEUUID $HOMEPART $HOMEFSTAB users,exec,rw,auto,noatime 0 2
-                        UUID=$BACKUPUUID /Backup $BACKUPFSTAB users,exec,rw,auto,noatime,uid=$( id -u david ),gid=$( id -g david ) 0 2
-                        UUID=$STORAGEUUID /StorageBunker $STORAGEFSTAB users,exec,rw,auto,noatime,uid=$( id -u david ),gid=$( id -g david ) 0 2" | sudo tee -a /etc/fstab
-
-                    echo "Updating the hosts file"
-                    sudo mv -f ./Dragon01_hosts /etc/hosts
-                    echo "Cleaning up"
-                    sudo rm ./Dragon01_hosts
-                 fi
             #Assuring ownership of the new links
-                sudo chown -R $USENAM:$USENAM /home/$USENAM
+                sudo chown -R "$USENAM:$USENAM" "/home/$USENAM"
         fi
 
 	#Setting up additional PPAs and other Repositories
@@ -350,7 +275,7 @@ else
                                         #Daniel Richter
                                         echo "Installing Daniel Richter's PPA for grub-customizer"
                                         sudo add-apt-repository -yn ppa:danielrichter2007/grub-customizer
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/danielrichter2007*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/danielrichter2007*; fi
                                         ;;
 
                                     3)	
@@ -403,14 +328,14 @@ else
                                         #Thunderbird Beat
                                         echo "Installing PPA for Thunderbird Beta. Install as thunderbird."
                                         sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
                                         ;;
 
                                     11)
                                         #OBS Project
                                         echo "Installing OBSProject PPA"
                                         sudo add-apt-repository -yn ppa:obsproject/obs-studio
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                         ;;
 
                                     12)
@@ -424,7 +349,7 @@ else
                                         #Peppermint 9
                                         echo "Installing Release PPA for Peppermint 9 OS"
                                         sudo add-apt-repository -yn ppa:peppermintos/p9-release
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/peppermint*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/peppermint*; fi
                                         ;;
 
                                     14)
@@ -446,7 +371,7 @@ else
                                         wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
                                         wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                         sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
-					                    if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/virtualbox*; fi
+					                    if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/virtualbox*; fi
                                         ;;
 
                                     17)
@@ -462,14 +387,14 @@ else
                                         #Need to expand later for multiple choice within WebUpd8's repos
                                         echo "Installing WebUpd8 PPA for PPA Manager"
                                         sudo add-apt-repository -yn ppa:webupd8team/y-ppa-manager
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/webupd8team*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/webupd8team*; fi
                                         ;;
                                         
                                     19)
                                         #XFCE - xubuntu-dev-extra
                                         echo "Installing xubuntu-dev-extras for XFCE"
                                         sudo add-apt-repository -yn ppa:xubuntu-dev/extras
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/xubuntu-dev-ubuntu-extras*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/xubuntu-dev-ubuntu-extras*; fi
                                         ;;
 
                                     20)
@@ -492,25 +417,25 @@ else
                                     23)
                                         #Sarnex - Wine + Gallium Nine
                                         sudo add-apt-repository -yn ppa:commendsarnex/winedri3
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/commendsarnex*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/commendsarnex*; fi
                                         ;;
 
                                     24)
                                         #Maarten Baert - simplescreenrecorder
                                         sudo add-apt-repository -yn ppa:maarten-baert/simplescreenrecorder
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/maarten-baert*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/maarten-baert*; fi
                                         ;;
                                     
                                     25)
                                         #RVM - smplayer gtk
                                         sudo add-apt-repository -yn ppa:rvm/smplayer
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
                                         ;;
                                     
                                     26)
                                         #RVM - smplayer qt4
                                         sudo add-apt-repository -yn ppa:rvm/smplayer-qt4
-                                        if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
+                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
                                         ;;
                                     
                                     27)	
@@ -550,17 +475,17 @@ else
 
                 D)
                     sudo apt install dialog
-                    cmd1=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
-                    options1=(1 "Firefox-Nightly" off    # any option can be set to default to "on"
+                    cmd2=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
+                    options2=(1 "Firefox-Nightly" off    # any option can be set to default to "on"
                         2 "deb-multimedia" off 
                         3 "Virtualbox" off
-                        4 "Lutris" off
+                        4 "Lutris" off)
  
-                    choices1=$("${cmd1[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                    choices2=$("${cmd2[@]}" "${options2[@]}" 2>&1 >/dev/tty)
                     clear
-                    for choice1 in $choices1;
+                    for choice2 in $choices2;
                     do                   
-                        case $choice1 in
+                        case $choice2 in
                           
                             1)
                                 #Firefox-Nightly
@@ -584,8 +509,8 @@ else
                                 wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
                                 wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                 sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
-    		                    if [ $(lsb_release -sc) == "buster" ]; then sudo sed -i 's/buster/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
-                                if [ $(lsb_release -sc) == "sid" ]; then sudo sed -i 's/sid/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
+    		                    if [ "$(lsb_release -sc)" == "buster" ]; then sudo sed -i 's/buster/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
+                                if [ "$(lsb_release -sc)" == "sid" ]; then sudo sed -i 's/sid/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
                                 ;;
                                 
                             4)
@@ -605,17 +530,17 @@ else
 
                 F)
                     sudo apt install dialog
-                    cmd1=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
-                    options1=(1 "fedora-workstation-repositories (PyCharm, Google Chrome, Nvidia drivers fedora28+, Steam client fedora28+" off    # any option can be set to default to "on"
+                    cmd3=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
+                    options3=(1 "fedora-workstation-repositories (PyCharm, Google Chrome, Nvidia drivers fedora28+, Steam client fedora28+" off    # any option can be set to default to "on"
                         2 "RPM Fusion" off 
                         3 "Virtualbox" off
-                        4 "Lutris" off
+                        4 "Lutris" off)
  
-                    choices1=$("${cmd1[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                    choices3=$("${cmd3[@]}" "${options3[@]}" 2>&1 >/dev/tty)
                     clear
-                    for choice1 in $choices1;
+                    for choice3 in $choices3;
                     do                   
-                        case $choice1 in
+                        case $choice3 in
                           
                             1)
                                 #fedora-workstation-repositories
@@ -627,7 +552,7 @@ else
                             2)
                                 #RPM Fusion
                                 echo "Installing RPM Fusion"
-                                sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+                                sudo dnf install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
                                 ;;
                             3)	
                                 #Virtualbox
@@ -668,7 +593,7 @@ else
             case $DISTBASE in
                 U)
                     sudo add-apt-repository -yn ppa:alexlarsson/flatpak
-		            if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
+		            if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
                     sudo apt update && sudo apt -y install flatpak snapd
                     ;;
 
@@ -717,8 +642,8 @@ else
         if [[ "$ADDAPPS" == 'Y' || -z "$ADDAPPS" ]];
         then
             echo "Installing Additional Software"
-            cmd2=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)
-        	options2=(1 "Sublime Text" off    # any option can be set to default to "on"
+            cmd4=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)
+        	options4=(1 "Sublime Text" off    # any option can be set to default to "on"
         		2 "Simplenote" off
                 3 "Leafpad" off
                 4 "Terminology" off
@@ -776,16 +701,16 @@ else
 #                56 "Hold for future use" off
 #                57 "Hold for future use" off
                 )
-            choices2=$("${cmd2[@]}" "${options2[@]}" 2>&1 >/dev/tty)
+            choices4=$("${cmd4[@]}" "${options4[@]}" 2>&1 >/dev/tty)
             clear
             case $DISTBASE in
                 U)
                     sudo apt update
                 	sudo apt install dialog -y
 
-                    for choice2 in $choices2
+                    for choice4 in $choices4
                     do
-                        case $choice2 in
+                        case $choice4 in
                         
                         1)
                             #Install Sublime Text*
@@ -888,7 +813,7 @@ else
 
                             #Firefox Browser
                             echo "Firefox-Nightly"
-                            if [ -e /etc/apt/sources.list.d/ubuntu-mozilla-daily-ubuntu-ppa-"$(lsb_release -sc)".list ];
+                            if [ -e "/etc/apt/sources.list.d/ubuntu-mozilla-daily-ubuntu-ppa-$(lsb_release -sc).list" ];
                             then
                                 sudo apt install firefox-trunk -y
                             else
@@ -900,13 +825,13 @@ else
 
                             #GIMP
                             echo "Installing GIMP"
-                            if [ -e /etc/apt/sources.list.d/otto-kesselgulasch-ubuntu-gimp-"$(lsb_release -sc)".list ];
+                            if [ -e "/etc/apt/sources.list.d/otto-kesselgulasch-ubuntu-gimp-$(lsb_release -sc).list" ];
                             then
                                 sudo apt install gimp -y
                             else
                                 sudo add-apt-repository -yn ppa:otto-kesselgulasch/gimp
                                 sudo apt update && sudo apt install gimp -y
-				sudo apt --fix-broken install -y
+                				sudo apt --fix-broken install -y
                             fi
                             ;;
                         16)
@@ -915,11 +840,11 @@ else
                             sudo apt install ffmpeg -y
                             if [ -e "/etc/apt/sources.list.d/obsproject-ubuntu-obs-studio-$(lsb_release -sc).list" ];
                             then
-                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
+                                if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                 sudo apt install obs-studio -y
                             else
                                 sudo add-apt-repository ppa:obsproject/obs-studio
-                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
+                                if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
                                 sudo apt update && sudo apt install obs-studio -y
                             fi
                             ;;
@@ -1127,19 +1052,19 @@ else
                             'cd ~/Documents || return'
                             currentuser=$(who | awk 'NR==1{print $1}')
                             sudo chmod +x ~/Documents/move-to-next-monitor
-                            sudo chown -R "$currentuser":"$currentuser" ~/Documents/move-to-next-monitor
+                            sudo chown -R "$currentuser:$currentuser" ~/Documents/move-to-next-monitor
                             ;;
 
                         42)	
                             #Install Mozilla Thunderbird
                             echo "Installing Thunderbird"
-                            if [ -e /etc/apt/sources.list.d/mozillateam-ubuntu-thunderbird-next-"$(lsb_release -sc)".list ];
+                            if [ -e "/etc/apt/sources.list.d/mozillateam-ubuntu-thunderbird-next-$(lsb_release -sc).list" ];
                             then
-                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
+                                if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
                                 sudo apt install thunderbird -y
                             else
                                 sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
-                                if [ $(lsb_release -sc) == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
+                                if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
                                 sudo apt update && sudo apt install thunderbird -y
                             fi
                             ;;
@@ -1162,7 +1087,7 @@ else
                         44)
                             #Install Oracle Java 10 and set Runtime
                             echo "Installing Oracle Java 10"
-                            if [ -e /etc/apt/sources.list.d/linuxuprising-ubuntu-java-"$(lsb_release -sc)".list ];
+                            if [ -e "/etc/apt/sources.list.d/linuxuprising-ubuntu-java-$(lsb_release -sc).list" ];
                             then
                                 echo oracle-java10-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
                                 sudo apt update && sudo apt install -y oracle-java10-installer
@@ -1181,7 +1106,7 @@ else
                         46)
                             #Install Grub-Customizer
                             echo "Installing Grub-Customizer"
-                            if [ -e /etc/apt/sources.list.d/danielrichter2007-ubuntu-grub-customizer-"$(lsb_release -sc)".list ];
+                            if [ -e "/etc/apt/sources.list.d/danielrichter2007-ubuntu-grub-customizer-$(lsb_release -sc).list" ];
                             then
                                sudo apt install grub-customizer -y
                             else 
@@ -1296,6 +1221,3 @@ else
 				
 	#Reboot Reminder
 		echo "Don't forget to reboot before updating to assure proper disk mounting!!!"
-
-fi
-

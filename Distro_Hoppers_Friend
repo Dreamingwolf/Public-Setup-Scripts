@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.5-alpha
+# Version 0.6-alpha
 
 
 	echo "Welcome to the Distro Hopper's Friend"
@@ -20,7 +20,10 @@
     echo "(You really should do this anyway! ;-) )"
     echo
     echo "OK then, let's get started!"
-    read -r -s -p "Please enter sudo password (required for certain commands in this script): " "SUDOPWD" && printf "\n"
+    echo "Sudo password is required for certain commands in this script."
+    echo "Entering an incorrect password will cause the script to crash."
+    read -r -s -p "Enter password: " SUDOPWD && printf "\n"
+    echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-$USER"
 
     #Gather Basic Info
     	echo "What is your user name?: "
@@ -32,7 +35,7 @@
         USENAM=${USENAM,,}
 
     #Auto Entry of Sudo Password in the Terminal
-    	echo "Do you want to auto enter your sudo password when in a terminal? (Y/n): "
+    	echo "Do you want to auto enter your sudo password when in a terminal? (y/N): "
 	    read -r PASSWD
         PASSWD=${PASSWD^}
 
@@ -86,15 +89,6 @@
     #Start of Actual Work
         echo "OK then, thats all I need for now, lets get started!"
 
-	#Updating Sudoers File to Add NOPASSWD to User
-        if [[ "$PASSWD" == 'Y' || -z "$PASSWD" ]];
-        then
-            echo "Adding NOPASSWD to sudoers file"
-            echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-install"
-        else
-            echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-install"
-        fi
-	
 	#Seperate Home/Data Partition
 
         if [[ "$SEPDATA" == 'Y' || -z "$SEPDATA" ]];
@@ -1214,6 +1208,14 @@
             esac
     fi
 
+    #Updating Sudoers File to Add NOPASSWD to User
+        if [[ "$PASSWD" == 'N' || -z "$PASSWD" ]];
+        then
+            sudo rm -f "/etc/sudoers.d/90-$USER"
+            sudo -k
+        else
+            echo "/etc/sudoers.d/90-$USER will remain"
+        fi
 
     #Update hosts file
 		echo "I would suggest updating your hosts file for security"

@@ -25,6 +25,13 @@
     read -r -s -p "Enter password: " SUDOPWD && printf "\n"
     echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-$USER"
 
+    symlink_setup () {
+        if [ -d "$PERMHOME/$SAFEATHOME" ]; then
+            if [ -d "/home/$USENAM/$SAFEATHOME" ]; then sudo rm -Rf "/home/$USENAM/$SAFEATHOME"; fi
+            sudo ln -s "$PERMHOME/$SAFEATHOME" "/home/$USENAM"
+        fi
+    }
+
     #Gather Basic Info
     	echo "What is your user name?: "
 	    read -r USENAM

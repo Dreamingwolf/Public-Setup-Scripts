@@ -12,6 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+# ~David F Muller
 # Version 0.7.5-beta
 
     #function for symlinking files and folders from a seperate home partition

@@ -12,10 +12,21 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.6-alpha
+# Version 0.7.5-beta
 
+    #function for symlinking files and folders from a seperate home partition
+    symlink_setup () {
+        if [ -e "$PERMHOME/$1" ]; then
+            if [ -e "/home/$USENAM/$1" ]; then
+                sudo rm -Rf "/home/$USENAM/$1"; fi
+        sudo ln -s "$PERMHOME/$1" "/home/$USENAM"
+        fi
+    }
 
-	echo "Welcome to the Distro Hopper's Friend"
+    #Array to list home folders requiring simlinking
+    home_folders=()
+
+    echo "Welcome to the Distro Hopper's Friend"
     echo "If you have any doubts about me or this script, please review the code before running"
     echo "(You really should do this anyway! ;-) )"
     echo
@@ -25,186 +36,102 @@
     read -r -s -p "Enter password: " SUDOPWD && printf "\n"
     echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-$USER"
 
-    symlink_setup () {
-        if [ -d "$PERMHOME/$SAFEATHOME" ]; then
-            if [ -d "/home/$USENAM/$SAFEATHOME" ]; then sudo rm -Rf "/home/$USENAM/$SAFEATHOME"; fi
-            sudo ln -s "$PERMHOME/$SAFEATHOME" "/home/$USENAM"
-        fi
-    }
-
     #Gather Basic Info
-    	echo "What is your user name?: "
-	    read -r USENAM
-        if [ "$USENAM" != "$USER" ]; then
-            echo "There was a mismatch in usernames that will cause issues...script will now exit"
-            exit 1
-        fi
-        USENAM=${USENAM,,}
+    echo "What is your user name?: "
+    read -r USENAM
+    if [ "$USENAM" != "$USER" ]; then
+        echo "There was a mismatch in usernames that will cause issues...script will now exit"
+        exit 1; fi
+    USENAM=${USENAM,,}
 
     #Auto Entry of Sudo Password in the Terminal
-    	echo "Do you want to auto enter your sudo password when in a terminal? (y/N): "
-	    read -r PASSWD
-        PASSWD=${PASSWD^}
+    echo "Do you want to auto enter your sudo password when in a terminal? (y/N): "
+    read -r PASSWD
+    PASSWD=${PASSWD^}
 
     #Dedicated Data/Home Partition
-        echo "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): "
-	    read -r SEPDATA
-        SEPDATA=${SEPDATA^}
+    echo "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): "
+    read -r SEPDATA
+    SEPDATA=${SEPDATA^}
 
     #Determine Base Distro
-        echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
-        echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse)?: "
-	    read -r DISTBASE
-        DISTBASE=${DISTBASE^}
-        if [ -z "$DISTBASE" ]; then
-            echo "I will assume Ubuntu"
-            DISTBASE='U';
-        elif [ "$DISTBASE" == 'O' ];
-            then
-                echo "Is your distro based on L-leap or T-tumbleweed?"
-                read -r SUSESUB
-                SUSESUB=${SUSESUB^}
-                if [ "$SUSESUB" != 'T' ];
-                    then
-                    echo "Assuming Leap as the base."
-                    SUSESUB='L'
-                fi
-        elif [ "$DISTBASE" == 'F' ];
-            then
-                echo "Which version # of Fedora? (i.e. 27 or 28)"
-                read -r FEDSUB
-        fi
-    
+    echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
+    echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse)?: "
+    read -r DISTBASE
+    DISTBASE=${DISTBASE^}
+    if [ -z "$DISTBASE" ]; then
+        echo "I will assume Ubuntu"
+        DISTBASE='U';
+    elif [ "$DISTBASE" == 'O' ]; then
+        echo "Is your distro based on L-leap or T-tumbleweed?"
+        read -r SUSESUB
+        SUSESUB=${SUSESUB^}
+        if [ "$SUSESUB" != 'T' ]; then
+            echo "Assuming Leap as the base."
+            SUSESUB='L'; fi
+    elif [ "$DISTBASE" == 'F' ]; then
+            echo "Which version # of Fedora? (i.e. 27 or 28)"
+            read -r FEDSUB; fi
+
     #Additional PPAs and/or Repositories
-        echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): "
-	    read -r ADDREPO
-        ADDREPO=${ADDREPO^}
+    echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): "
+    read -r ADDREPO
+    ADDREPO=${ADDREPO^}
 
     #Snaps and Flatpaks
-        echo "Would you like to enable Snaps and Flatpaks?"
-        echo "These are required for some of the Additional Software Installs (Y/n): "
-	    read -r SNAPFLAT
-        SNAPFLAT=${SNAPFLAT^}
+    echo "Would you like to enable Snaps and Flatpaks?"
+    echo "These are required for some of the Additional Software Installs (Y/n): "
+    read -r SNAPFLAT
+    SNAPFLAT=${SNAPFLAT^}
 
     #Additional Software
-        echo "Would you like to install additional software (Currently only for Ubuntu)? (Y/n): "
-	    read -r ADDAPPS
-        ADDAPPS=${ADDAPPS^}
+    echo "Would you like to install additional software (Currently only for Ubuntu)? (Y/n): "
+    read -r ADDAPPS
+    ADDAPPS=${ADDAPPS^}
 
     #End of Gathering Info
 
     #Start of Actual Work
-        echo "OK then, thats all I need for now, lets get started!"
+    echo "OK then, thats all I need for now, lets get started!"
 
 	#Seperate Home/Data Partition
+    if [[ "$SEPDATA" == 'Y' || -z "$SEPDATA" ]]; then
 
-        if [[ "$SEPDATA" == 'Y' || -z "$SEPDATA" ]];
-        then
-            #Core Operations
-                PERMHOME=/home/$USENAM/.home
-                echo "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: "
- 	            read -r PERMDATA
-                PERMDATA=${PERMDATA,,}
-                echo "What is the filesystem (i.e. ext4) of your data/home partition?: "
-		        read -r UPDATEFSTAB
-                PERMUUID=$( blkid -s UUID -o value "$PERMDATA" )
-                sudo echo "UUID=$PERMUUID $PERMHOME $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
-    
-            #Setup Directories for Mounting
-        		echo "Creating directory for mounting"
-		        mkdir "$PERMHOME"
-			
-        	#Setup home folder
-        		echo "Mounting, setting up, and linking home folder"
-            	echo "These are basic folders based on what I have, YMMV, you will need to manually remove/link"
-            	echo "any folders you use that I do not"
-	    		sudo mount "$PERMDATA" "$PERMHOME"
-			
-    		#Remove original folders and set symbolic links
-    			if [ -d "$PERMHOME/Documents" ]
-                then
-                    if [ -d "/home/$USENAM/Documents" ]; then sudo rm -Rf "/home/$USENAM/Documents"; fi
-                    sudo ln -s "$PERMHOME/Documents" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Downloads" ]
-                then
-                    if [ -d "/home/$USENAM/Downloads" ]; then sudo rm -Rf "/home/$USENAM/Downloads"; fi
-                    sudo ln -s "$PERMHOME/Downloads" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Games" ]
-                then
-                    if [ -d "/home/$USENAM/Games" ]; then sudo rm -Rf "/home/$USENAM/Games"; fi
-                    sudo ln -s "$PERMHOME/Games" "/home/$USENAM"
-                fi
-                if [ -d "$PERMHOME/Github" ]
-                then
-                    if [ -d "/home/$USENAM/Github" ]; then sudo rm -Rf "/home/$USENAM/Github"; fi
-                    sudo ln -s "$PERMHOME/Github" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Links" ]
-                then
-                    if [ -d "/home/$USENAM/Links" ]; then sudo rm -Rf "/home/$USENAM/Links"; fi
-                    sudo ln -s "$PERMHOME/Links" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Music" ]
-                then
-                    if [ -d "/home/$USENAM/Music" ]; then sudo rm -Rf "/home/$USENAM/Music"; fi
-                    sudo ln -s "$PERMHOME/Music" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Pictures" ]
-                then
-                    if [ -d "/home/$USENAM/Pictures" ]; then sudo rm -Rf "/home/$USENAM/Pictures"; fi
-                    sudo ln -s "$PERMHOME/Pictures" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/Videos" ]
-                then
-                    if [ -d "/home/$USENAM/Videos" ]; then sudo rm -Rf "/home/$USENAM/Videos"; fi
-                    sudo ln -s "$PERMHOME/Videos" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/.gnupg" ]
-                then
-                    if [ -d "/home/$USENAM/.gnupg" ]; then sudo rm -Rf "/home/$USENAM/.gnupg"; fi
-                    sudo ln -s "$PERMHOME/.gnupg" "/home/$USENAM"
-                fi
-                if [ -d "$PERMHOME/.gdfuse" ]
-                then
-                    if [ -d "/home/$USENAM/.gdfuse" ]; then sudo rm -Rf "/home/$USENAM/.gdfuse"; fi
-                    sudo ln -s "$PERMHOME/.gdfuse" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/.mozilla" ]
-                then
-                    if [ -d "/home/$USENAM/.mozilla" ]; then sudo rm -Rf "/home/$USENAM/.mozilla"; fi
-                    sudo ln -s "$PERMHOME/.mozilla" "/home/$USENAM"
-                fi
-                if [ -d "$PERMHOME/.ssh" ]
-                then
-                    if [ -d "/home/$USENAM/.ssh" ]; then sudo rm -Rf "/home/$USENAM/.ssh"; fi
-                    sudo ln -s "$PERMHOME/.ssh" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/.steam" ]
-                then
-                    if [ -d "/home/$USENAM/.steam" ]; then sudo rm -Rf "/home/$USENAM/.steam"; fi
-                    sudo ln -s "$PERMHOME/.steam" "/home/$USENAM"
-                fi
-	    		if [ -d "$PERMHOME/.thunderbird" ]
-                then
-                    if [ -d "/home/$USENAM/.thunderbird" ]; then sudo rm -Rf "/home/$USENAM/.thunderbird"; fi
-                    sudo ln -s "$PERMHOME/.thunderbird" "/home/$USENAM"
-                fi
-                 if [ -d "$PERMHOME/.zoom" ]
-                then
-                    if [ -d "/home/$USENAM/.zoom" ]; then sudo rm -Rf "/home/$USENAM/.zoom"; fi
-                    sudo ln -s "$PERMHOME/.zoom" "/home/$USENAM"
-                fi
-                if [ -f "$PERMHOME/.pam-gnupg" ]
-                then
-                    if [ -f "/home/$USENAM/.pam-gnupg" ]; then sudo rm -f "/home/$USENAM/.pam-gnupg"; fi
-                    sudo ln -s "$PERMHOME/.pam-gnupg" "/home/$USENAM"
-                fi
+        #Core Operations
+        PERMHOME=/home/$USENAM/.home
+        echo "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: "
+        read -r PERMDATA
+        PERMDATA=${PERMDATA,,}
+        echo "What is the filesystem (i.e. ext4) of your data/home partition?: "
+        read -r UPDATEFSTAB
+        PERMUUID=$( blkid -s UUID -o value "$PERMDATA" )
+        sudo echo "UUID=$PERMUUID $PERMHOME $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
 
-            #Assuring ownership of the new links
-                sudo chown -R "$USENAM:$USENAM" "/home/$USENAM"
-        fi
+        #Setup Directories for Mounting
+        echo "Creating directory for mounting"
+        mkdir "$PERMHOME"
+
+    	#Setup home folder
+        echo "Mounting, setting up, and linking home folder"
+        echo "These are basic folders based on what I have, YMMV, you will need to manually remove/link"
+        echo "any folders you use that I do not"
+        sudo mount "$PERMDATA" "$PERMHOME"
+
+        #Get list of files/folders to simlimk
+        echo "Enter the names of all files and folders you wished linked from your home partition (Press Cntrl-D when finished): "
+        while read -r HOMELINKS; do
+            home_folders+=("$HOMELINKS")
+        done
+        echo "These are the files/folders which will be linked : ${home_folders[*]}"
+
+		#Remove original folders and set symbolic links
+        for i in "${home_folders[@]}"; do
+            symlink_setup "$i"
+        done
+
+        #Assuring ownership of the new links
+            sudo chown -R "$USENAM:$USENAM" "/home/$USENAM"
+    fi
 
 	#Setting up additional PPAs and other Repositories
         if [[ "$ADDREPO" == 'Y' || -z "$ADDREPO" ]];
@@ -1166,7 +1093,7 @@
                             sudo apt install -y ukuu
                             ;;
 
-                        54)	
+                        54)
                             #Git
                             echo "Installing Git"
                             sudo apt install -y git
@@ -1208,7 +1135,7 @@
                 O)
                     ;;
 
-                 *)
+                *)
                     echo "Skipping this section due to faulty input"
                     ;;
 
@@ -1216,8 +1143,7 @@
     fi
 
     #Updating Sudoers File to Add NOPASSWD to User
-        if [[ "$PASSWD" == 'N' || -z "$PASSWD" ]];
-        then
+        if [[ "$PASSWD" == 'N' || -z "$PASSWD" ]]; then
             sudo rm -f "/etc/sudoers.d/90-$USER"
             sudo -k
         else
@@ -1225,8 +1151,8 @@
         fi
 
     #Update hosts file
-		echo "I would suggest updating your hosts file for security"
+        echo "I would suggest updating your hosts file for security"
         echo "You might consider using https://someonewhocares.org/hosts/hosts as a base"
-				
+
 	#Reboot Reminder
-		echo "Don't forget to reboot before updating to assure proper disk mounting!!!"
+        echo "Don't forget to reboot before updating to assure proper disk mounting!!!"

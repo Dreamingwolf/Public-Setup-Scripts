@@ -15,6 +15,9 @@
 # ~David F Muller
 # Version 0.7.5-beta
 
+    # Test for bash shell
+    if [ "$0" != "/bin/bash" ]; then /bin/bash; fi
+
     #function for symlinking files and folders from a seperate home partition
     symlink_setup () {
         if [ -e "$PERMHOME/$1" ]; then

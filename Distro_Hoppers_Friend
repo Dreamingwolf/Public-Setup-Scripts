@@ -12,7 +12,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# Version 0.7.5-beta
+# Version 0.7.5.1-beta
 
     #function for symlinking files and folders from a seperate home partition
     symlink_setup () {
@@ -55,23 +55,20 @@
     SEPDATA=${SEPDATA^}
 
     #Determine Base Distro
-    echo "What Distro is your current install based on? (i.e. Ubuntu, Fedora)"
-    echo "(U-ubuntu, A-arch, C-arcolinux, D-debian, F-fedora, O-opensuse)?: "
-    read -r DISTBASE
-    DISTBASE=${DISTBASE^}
-    if [ -z "$DISTBASE" ]; then
-        echo "I will assume Ubuntu"
-        DISTBASE='U';
-    elif [ "$DISTBASE" == 'O' ]; then
-        echo "Is your distro based on L-leap or T-tumbleweed?"
-        read -r SUSESUB
-        SUSESUB=${SUSESUB^}
-        if [ "$SUSESUB" != 'T' ]; then
-            echo "Assuming Leap as the base."
-            SUSESUB='L'; fi
-    elif [ "$DISTBASE" == 'F' ]; then
-            echo "Which version # of Fedora? (i.e. 27 or 28)"
-            read -r FEDSUB; fi
+    declare -A osInfo;
+    osInfo[/etc/redhat-release]=dnf
+    osInfo[/etc/arch-release]=pacman
+    osInfo[/etc/gentoo-release]=emerge
+    osInfo[SUSe-release]=zypper
+    osInfo[/etc/debian_version]=apt
+
+    for i in "${!osInfo[@]}"; do
+        if [[ -f "$i" ]]; then
+            #Set the Base Install Command
+            BaInCo="${osInfo[$i]}"
+            echo $BaInCo
+        fi
+    done
 
     #Additional PPAs and/or Repositories
     echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): "

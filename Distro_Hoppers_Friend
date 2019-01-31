@@ -12,7 +12,11 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
+# ~David F Muller
 # Version 0.7.5.1-beta
+
+    # Test for bash shell
+    if [ "$0" != "/bin/bash" ]; then /bin/bash; fi
 
     #function for symlinking files and folders from a seperate home partition
     symlink_setup () {

@@ -74,6 +74,34 @@
         fi
     done
 
+    #Set Install Command
+    case $BaInCo in
+        dnf)
+            InCommand="sudo dnf install"
+            UpGradeCommand="sudo dnf -y system-upgrade"
+            $InCommand -y dialog
+            ;;
+        pacman)
+            InCommand="yay -S --needed"
+            UpGradeCommand="yay -Syyu --noconfirm"
+            $InCommand --noconfirm dialog
+            ;;
+        emerge)
+            InCommand="sudo emerge --ask"
+            UpGradeCommand="sudo emerge --update --deep --with-bdeps=y @world"
+            ;;
+        zypper)
+            InCommand="sudo zypper in"
+            UpGradeCommand="sudo zypper -y dist-upgrade"
+            $InCommand -y dialog
+            ;;
+        apt)
+            InCommand="sudo apt install"
+            UpGradeCommand="sudo apt update && sudo apt dist-upgrade"
+            $InCommand -y dialog
+            ;;
+    esac
+
     #Additional PPAs and/or Repositories
     echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): "
     read -r ADDREPO

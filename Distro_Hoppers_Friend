@@ -27,8 +27,70 @@
         fi
     }
 
+    #Functions for adding repos
+    reg_repo_install () {
+           case $BaInCo in
+                dnf)
+                    ;;
+                pacman)
+                    ;;
+                zypper)
+                    ;;
+                apt)
+                    for i in "${regular_repos[@]}"; do
+                        sudo add-apt-repository -yn $i    
+                    done
+                    ;;
+            esac
+    }
+
+    oddball_repo_install () {
+           case $BaInCo in
+                dnf)
+                    ;;
+                pacman)
+                    ;;
+                zypper)
+                    ;;
+                apt)
+                    for i in "${oddball_repos[@]}"; do
+                        case $i in
+                            etcher)
+                                echo "deb https://dl.bintray.com/resin-io/debian stable etcher" | sudo tee /etc/apt/sources.list.d/etcher.list
+                                sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+                                ;;
+                        esac
+                    done
+                    ;;
+            esac   
+    }
+
+    #Functions for installing additional apps
+    app_installer () {
+        $InCommand $1
+    }
+
+    special_apps_install () {
+        case $1 in
+            lutris)
+                ver=$(lsb_release -sr);
+                if [ "$ver" != "18.10" ] && [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
+                echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                ;;
+            vbox)
+                ;;
+            etcher)
+                
+                ;;
+        esac
+    }
     #Array to list home folders requiring simlinking
     home_folders=()
+    install_apps=()
+    special_installs=()
+    regular_repos=()
+    oddball_repos=()
 
     echo "Welcome to the Distro Hopper's Friend"
     echo "If you have any doubts about me or this script, please review the code before running"
@@ -70,7 +132,6 @@
         if [[ -f "$i" ]]; then
             #Set the Base Install Command
             BaInCo="${osInfo[$i]}"
-            echo $BaInCo
         fi
     done
 
@@ -79,12 +140,12 @@
         dnf)
             InCommand="sudo dnf install"
             UpGradeCommand="sudo dnf -y system-upgrade"
-            $InCommand -y dialog
+            $InCommand -y dialog curl
             ;;
         pacman)
             InCommand="yay -S --needed"
             UpGradeCommand="yay -Syyu --noconfirm"
-            $InCommand --noconfirm dialog
+            $InCommand --noconfirm dialog curl
             ;;
         emerge)
             InCommand="sudo emerge --ask"
@@ -93,12 +154,12 @@
         zypper)
             InCommand="sudo zypper in"
             UpGradeCommand="sudo zypper -y dist-upgrade"
-            $InCommand -y dialog
+            $InCommand -y dialog curl
             ;;
         apt)
             InCommand="sudo apt install"
             UpGradeCommand="sudo apt update && sudo apt dist-upgrade"
-            $InCommand -y dialog
+            $InCommand -y dialog curl
             ;;
     esac
 
@@ -114,7 +175,7 @@
     SNAPFLAT=${SNAPFLAT^}
 
     #Additional Software
-    echo "Would you like to install additional software (Currently only for Ubuntu)? (Y/n): "
+    echo "Would you like to install additional software? (Y/n): "
     read -r ADDAPPS
     ADDAPPS=${ADDAPPS^}
 
@@ -142,8 +203,6 @@
 
     	#Setup home folder
         echo "Mounting, setting up, and linking home folder"
-        echo "These are basic folders based on what I have, YMMV, you will need to manually remove/link"
-        echo "any folders you use that I do not"
         sudo mount "$PERMDATA" "$PERMHOME"
 
         #Get list of files/folders to simlimk
@@ -168,11 +227,7 @@
             case $DISTBASE in
                 U)
                     #Base Repos
-                        sudo apt-add-repository -yn main
-                        sudo apt-add-repository -yn restricted
-                        sudo apt-add-repository -yn universe
-                        sudo apt-add-repository -yn multiverse
-                        sudo apt install -y curl
+                        regular_repos+=(main restricted universe multiverse)
 
                     #PPAs
 
@@ -181,14 +236,12 @@
                             echo "BE WARNED - Not all PPAs have release pages for all versions of Ubuntu. Be sure to verify and correct any issues after installation!"
 
                         # PPA Installation Commands
-
-                            sudo apt install dialog
                             cmd1=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
                             options1=(1 "Canonical Kernal Team" off    # any option can be set to default to "on"
                                 2 "Daniel Richter - grub-customizer" off 
                                 3 "Etcher" off
                                 4 "Nvidia Drivers" off
-                                5 "Linux Uprising - Oracle Java 10" off
+                                5 "Linux Uprising - Oracle Java" off
                                 6 "Lutris" off
                                 7 "LXQT Team" off
                                 8 "LXQT Team - Testing" off
@@ -237,9 +290,7 @@
 
                                     3)	
                                         #Etcher
-                                        echo "Installing Etcher Repository"
-                                        echo "deb https://dl.bintray.com/resin-io/debian stable etcher" | sudo tee /etc/apt/sources.list.d/etcher.list
-                                        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+                                        oddball_repos+=(etcher)
                                         ;;
                                 
                                     4)
@@ -256,11 +307,7 @@
 
                                     6)
                                         #Lutris
-                                        echo "Installing Lutris Repository"
-                                        ver=$(lsb_release -sr);
-                                        if [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
-                                        echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
-                                        wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                                        oddball_repos+=(lutris)
                                         ;;
 
                                     7)

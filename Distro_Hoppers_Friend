@@ -59,6 +59,33 @@
                                 echo "deb https://dl.bintray.com/resin-io/debian stable etcher" | sudo tee /etc/apt/sources.list.d/etcher.list
                                 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
                                 ;;
+                            simplescreenrecorder)
+                                sudo add-apt-repository -yn ppa:maarten-baert/simplescreenrecorder
+                                if [ "$(lsb_release -sc)" != "bionic" ]; then sudo sed -i 's/$(lsb_release -sc)/bionic/g' /etc/apt/sources.list.d/maarten-baert*; fi
+                                ;;
+                            sublime)
+                                wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
+                                sudo apt install apt-transport-https -y
+                                echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
+                                ;;
+                            pepp9)
+                                sudo add-apt-repository -yn ppa:peppermintos/p9-release
+                                if [ "$(lsb_release -sc)" != "bionic" ]; then sudo sed -i 's/$(lsb_release -sc)/bionic/g' /etc/apt/sources.list.d/peppermint*; fi
+                                ;;
+                            steam)
+                                sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B05498B7
+                                sudo sh -c 'echo "deb http://repo.steampowered.com/steam/ precise steam" | sudo tee -a /etc/apt/sources.list.d/steam.list'
+                                ;;
+                            vbox)
+                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
+                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
+                                sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+                                ;;
+                            vcode)
+                                curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+                                sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
+                                sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+                                ;;
                         esac
                     done
                     ;;
@@ -73,15 +100,21 @@
     special_apps_install () {
         case $1 in
             lutris)
-                ver=$(lsb_release -sr);
-                if [ "$ver" != "18.10" ] && [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
-                echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
-                wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                if [[ ! -f /etc/apt/sources.list.d/lutris.list ]]; then
+                    if [ "$ver" != "18.10" ] && [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
+                    echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                    wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                fi
+                $InCommand lutris
                 ;;
             vbox)
                 ;;
             etcher)
-                
+                if [[ ! -f /etc/apt/sources.list.d/etcher.list ]]; then
+                    echo "deb https://dl.bintray.com/resin-io/debian stable etcher" | sudo tee /etc/apt/sources.list.d/etcher.list
+                    sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 379CE192D401AB61
+                fi
+                $InCommand etcher-electron                
                 ;;
         esac
     }
@@ -160,6 +193,10 @@
             InCommand="sudo apt install"
             UpGradeCommand="sudo apt update && sudo apt dist-upgrade"
             $InCommand -y dialog curl
+            echo "Is this distro Ubuntu or Debian based (U/D)? "
+            read -r base_distro
+            base_distro=${base_distro^}
+            
             ;;
     esac
 
@@ -224,8 +261,9 @@
 	#Setting up additional PPAs and other Repositories
         if [[ "$ADDREPO" == 'Y' || -z "$ADDREPO" ]];
         then
-            case $DISTBASE in
-                U)
+            case $BaInCo in
+                apt)
+                    if [[ $base_distro == "U"]]
                     #Base Repos
                         regular_repos+=(main restricted universe multiverse)
 
@@ -236,232 +274,73 @@
                             echo "BE WARNED - Not all PPAs have release pages for all versions of Ubuntu. Be sure to verify and correct any issues after installation!"
 
                         # PPA Installation Commands
-                            cmd1=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
+                            ubuntu_ppas=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
                             options1=(1 "Canonical Kernal Team" off    # any option can be set to default to "on"
                                 2 "Daniel Richter - grub-customizer" off 
                                 3 "Etcher" off
                                 4 "Nvidia Drivers" off
                                 5 "Linux Uprising - Oracle Java" off
                                 6 "Lutris" off
-                                7 "LXQT Team" off
-                                8 "LXQT Team - Testing" off
-                                9 "Firefox-Nightly" off
-                                10 "Thunderbird Beta" off
-                                11 "OBS Project" off
-                                12 "Otto Kesselgulasch - Gimp" off
-                                13 "Peppermint 9" off
-                                14 "Steam" off
-                                15 "Tony George - Timeshift etc" off
-                                16 "Virtualbox" off
-                                17 "Visual Studio Code" off
-                                18 "WebUpd8 Team" off
-                                19 "XFCE - xubuntu-dev-extra" off
-                                20 "XFCE - xubuntu-dev-experimental" off
-                                21 "KDE - kubuntu backports" off
-                                22 "Oibaf - open video drivers for radeon, intel and nvidia" off
-                                23 "Sarnex - Wine + Gallium Nine" off
-                                24 "Maarten Baert - simplescreenrecorder" off
-                                25 "RVM - smplayer gtk" off
-                                26 "RVM - smplayer qt4" off
-                                27 "Sublime Text" off)
-                        #The Rest are here merely to allow for easy expansion
-                            #			 28 "" off
-                            #			 29 "" off
-                            #			 30 "" off
+                                7 "Oibaf - open video drivers for radeon, intel and nvidia" off
+                                8 "Sarnex - Wine + Gallium Nine" off
+                                9 "Maarten Baert - simplescreenrecorder" off
+                                10 "RVM - smplayer gtk & qt5" off
+                                11 "RVM - smplayer qt4" off
+                                12 "Sublime Text & Sublime Merge" off
+                                13 "Firefox-Nightly (firefox-trunk)" off
+                                14 "Thunderbird Beta" off
+                                15 "OBS Project" off
+                                16 "Otto Kesselgulasch - Gimp" off
+                                17 "Peppermint 9" off
+                                18 "Steam" off
+                                19 "Tony George - Timeshift etc" off
+                                20 "Virtualbox" off
+                                21 "Visual Studio Code" off
+                                22 "WebUpd8 Team" off
+                                23 "XFCE - xubuntu-dev-extra" off
+                                24 "XFCE - xubuntu-dev-experimental" off
+                                25 "KDE - kubuntu backports" off)
 
-                            choices1=$("${cmd1[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                            selected_ppas=$("${ubuntu_ppas[@]}" "${options1[@]}" 2>&1 >/dev/tty)
                             clear
-                            for choice1 in $choices1;
+                            for selected_ppas in $selected_ppas;
                             do                   
-                                case $choice1 in
-                            
-                                    1)
-                                        #Canonical Kernal Team
-                                        echo "Installing Canonical Kernal Team PPA"
-                                        sudo add-apt-repository -yn ppa:canonical-kernal-team/ppa
-                                        ;;
+                                case $selected_ppas in
+                                    1)  regular_repos+=(ppa:canonical-kernal-team/ppa) ;;
+                                    2)  regular_repos+=(ppa:danielrichter2007/grub-customizer) ;;
+                                    3)  oddball_repos+=(etcher) ;;
+                                    4)  regular_repos+=(ppa:graphics-drivers/ppa) ;;
+                                    5)  regular_repos+=(ppa:linuxuprising/java) ;;
+                                    6)  oddball_repos+=(lutris) ;;
+                                    7)  regular_repos+=(ppa:oibaf/graphics-drivers) ;;
+                                    8)  regular_repos+=(ppa:commendsarnex/winedri3) ;;
+                                    9)  oddball_repos+=(simplescreenrecorder) ;;
+                                    10) regular_repos+=(ppa:rvm/smplayer) ;;
+                                    11) regular_repos+=(ppa:rvm/smplayer-qt4) ;;
+                                    12) oddball_repos+=(sublime) ;;
+                                    13) regular_repos+=(ppa:ubuntu-mozilla-daily/ppa) ;;
+                                    14) regular_repos+=(ppa:mozillateam/thunderbird-next) ;;
+                                    15) regular_repos+=(ppa:obsproject/obs-studio) ;;
+                                    16) regular_repos+=(ppa:otto-kesselgulasch/gimp) ;;
+                                    17) oddball_repos+=(pepp9) ;;
+                                    18) oddball_repos+=(steam) ;;
+                                    19) regular_repos+=(ppa:teejee2008/ppa) ;;
+                                    20) oddball_repos+=(vbox) ;;
+                                    21) oddball_repos+=(vcode) ;;
+                                    22) regular_repos+=(ppa:webupd8team/y-ppa-manager) ;;
+                                    23) regular_repos+=(ppa:xubuntu-dev/extras) ;;
 
-                                    2)
-                                        #Daniel Richter
-                                        echo "Installing Daniel Richter's PPA for grub-customizer"
-                                        sudo add-apt-repository -yn ppa:danielrichter2007/grub-customizer
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/danielrichter2007*; fi
-                                        ;;
-
-                                    3)	
-                                        #Etcher
-                                        oddball_repos+=(etcher)
-                                        ;;
-                                
-                                    4)
-                                        #Nvidia Drivers
-                                        echo "Installing Graphics Drivers PPA for Nvidia drivers"
-                                        sudo add-apt-repository -yn ppa:graphics-drivers/ppa
-                                        ;;
-
-                                    5)
-                                        #Linux Uprising Java 10
-                                        echo "Installing Linux Uprising PPA for Oracle Java 10"
-                                        sudo add-apt-repository -yn ppa:linuxuprising/java
-                                        ;;
-
-                                    6)
-                                        #Lutris
-                                        oddball_repos+=(lutris)
-                                        ;;
-
-                                    7)
-                                        #LXQT Team
-                                        echo "Installing LXQT Team PPA"
-                                        sudo add-apt-repository -yn ppa:lxqt/ppa
-                                        ;;
-
-                                    8)
-                                        #LXQT Team - Testing
-                                        echo "Installing LXQT Team - Testing PPA"
-                                        sudo add-apt-repository -yn ppa:lxqt/testing
-                                        ;;
-
-                                    9)
-                                        #Firefox-Nightly
-                                        echo "Installing PPA for Firefox Nightly. Install as firefox-trunk."
-                                        sudo add-apt-repository -yn ppa:ubuntu-mozilla-daily/ppa
-                                        ;;
-
-                                    10)
-                                        #Thunderbird Beat
-                                        echo "Installing PPA for Thunderbird Beta. Install as thunderbird."
-                                        sudo add-apt-repository -yn ppa:mozillateam/thunderbird-next
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/mozillateam*; fi
-                                        ;;
-
-                                    11)
-                                        #OBS Project
-                                        echo "Installing OBSProject PPA"
-                                        sudo add-apt-repository -yn ppa:obsproject/obs-studio
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/obsproject*; fi
-                                        ;;
-
-                                    12)
-                                        #Otto Kesselgulasch
-                                        #Need to expand later for multiple choice within Otto's repos
-                                        echo "Installing Otto Kesselgulasch PPA for Gimp"
-                                        sudo add-apt-repository -yn ppa:otto-kesselgulasch/gimp
-                                        ;;
-
-                                    13)
-                                        #Peppermint 9
-                                        echo "Installing Release PPA for Peppermint 9 OS"
-                                        sudo add-apt-repository -yn ppa:peppermintos/p9-release
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/peppermint*; fi
-                                        ;;
-
-                                    14)
-                                        #Steam
-                                        echo "Installing Steam PPA for Ubuntu Precise"
-                                        sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B05498B7
-                                        sudo sh -c 'echo "deb http://repo.steampowered.com/steam/ precise steam" | sudo tee -a /etc/apt/sources.list.d/steam.list'
-                                        ;;
-
-                                    15)
-                                        #Tony George
-                                        echo "Installing Tony George PPA for timeshift, etc"
-                                        sudo add-apt-repository -yn ppa:teejee2008/ppa
-                                        ;;
-
-                                    16)
-                                        #Virtualbox
-                                        echo "Installing Virtualbox Repository"
-                                        wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
-                                        wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
-                                        sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
-					                    if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/virtualbox*; fi
-                                        ;;
-
-                                    17)
-                                        #Visual Studio Code
-                                        echo "Installing Visual Studio Code Repository. Install as code"
-                                        curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
-                                        sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
-                                        sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
-                                        ;;
-
-                                    18)
-                                        #WebUpd8 Team
-                                        #Need to expand later for multiple choice within WebUpd8's repos
-                                        echo "Installing WebUpd8 PPA for PPA Manager"
-                                        sudo add-apt-repository -yn ppa:webupd8team/y-ppa-manager
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/webupd8team*; fi
-                                        ;;
-                                        
-                                    19)
-                                        #XFCE - xubuntu-dev-extra
-                                        echo "Installing xubuntu-dev-extras for XFCE"
-                                        sudo add-apt-repository -yn ppa:xubuntu-dev/extras
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/xubuntu-dev-ubuntu-extras*; fi
-                                        ;;
-
-                                    20)
+                                    24)
                                         #XFCE - xubuntu-dev-experimental
                                         echo "Installing xubuntu-dev-experimental for XFCE"				
                                         sudo add-apt-repository -yn ppa:xubuntu-dev/experimental
                                         ;;
 
-                                    21)
+                                    25)
                                         #KDE kubuntu backports
                                         echo "Installing kubuntu backports PPA for KDE"
                                         sudo add-apt-repository -yn ppa:kubuntu-ppa/backports
                                         ;;
-
-                                    22)
-                                        #Oibaf - open video drivers
-                                        sudo add-apt-repository -yn ppa:oibaf/graphics-drivers
-                                        ;;
-                    
-                                    23)
-                                        #Sarnex - Wine + Gallium Nine
-                                        sudo add-apt-repository -yn ppa:commendsarnex/winedri3
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/commendsarnex*; fi
-                                        ;;
-
-                                    24)
-                                        #Maarten Baert - simplescreenrecorder
-                                        sudo add-apt-repository -yn ppa:maarten-baert/simplescreenrecorder
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/maarten-baert*; fi
-                                        ;;
-                                    
-                                    25)
-                                        #RVM - smplayer gtk
-                                        sudo add-apt-repository -yn ppa:rvm/smplayer
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
-                                        ;;
-                                    
-                                    26)
-                                        #RVM - smplayer qt4
-                                        sudo add-apt-repository -yn ppa:rvm/smplayer-qt4
-                                        if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/rvm*; fi
-                                        ;;
-                                    
-                                    27)	
-                                        #Sublimehq - Sublime text
-                                        wget -qO - https://download.sublimetext.com/sublimehq-pub.gpg | sudo apt-key add -
-                                        sudo apt install apt-transport-https -y
-                                        echo "deb https://download.sublimetext.com/ apt/stable/" | sudo tee /etc/apt/sources.list.d/sublime-text.list
-                                        ;;
-
-                                #The rest are here merely to allow for expansion
-                                    #			28)
-                                                    #
-                                    #				;;
-                                    #
-                                    #			29) 
-                                                    #
-                                    #				;;
-                                    #
-                                    #			30) 
-                                                    #
-                                    #				;;
-                                    #
                                 esac
                             done
 
@@ -501,9 +380,9 @@
                             2)
                                 #Deb-Multimedia
                                 echo "Installing Deb-Multimedia Repository"
-                                if [[ "$(lsb_release -sc)" == 'jessie' || "$(lsb_release -sc)" == 'wheezy' ]];
-                                    then sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list';
-                                else sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main non-free" | sudo tee -a /etc/apt/sources.list';
+                                if [[ "$(lsb_release -sc)" == 'jessie' || "$(lsb_release -sc)" == 'wheezy' ]]; then
+                                        sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list'
+                                    else sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main non-free" | sudo tee -a /etc/apt/sources.list'
                                 fi
                                 ;;
 

@@ -136,21 +136,18 @@
     echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-$USER"
 
     #Gather Basic Info
-    echo "What is your user name?: "
-    read -r USENAM
+    read -r -p "What is your user name?: " USENAM
     if [ "$USENAM" != "$USER" ]; then
         echo "There was a mismatch in usernames that will cause issues...script will now exit"
         exit 1; fi
     USENAM=${USENAM,,}
 
     #Auto Entry of Sudo Password in the Terminal
-    echo "Do you want to auto enter your sudo password when in a terminal? (y/N): "
-    read -r PASSWD
+    read -r -p "Do you want to auto enter your sudo password when in a terminal? (y/N): " PASSWD
     PASSWD=${PASSWD^}
 
     #Dedicated Data/Home Partition
-    echo "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): "
-    read -r SEPDATA
+    read -r -p "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): " SEPDATA
     SEPDATA=${SEPDATA^}
 
     #Determine Base Distro
@@ -196,24 +193,21 @@
             echo "Is this distro Ubuntu or Debian based (U/D)? "
             read -r base_distro
             base_distro=${base_distro^}
-            
+
             ;;
     esac
 
     #Additional PPAs and/or Repositories
-    echo "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): "
-    read -r ADDREPO
+    read -r -p "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): " ADDREPO
     ADDREPO=${ADDREPO^}
 
     #Snaps and Flatpaks
     echo "Would you like to enable Snaps and Flatpaks?"
-    echo "These are required for some of the Additional Software Installs (Y/n): "
-    read -r SNAPFLAT
+    read -r -p "These are required for some of the Additional Software Installs (Y/n): " SNAPFLAT
     SNAPFLAT=${SNAPFLAT^}
 
     #Additional Software
-    echo "Would you like to install additional software? (Y/n): "
-    read -r ADDAPPS
+    read -r -p "Would you like to install additional software? (Y/n): " ADDAPPS
     ADDAPPS=${ADDAPPS^}
 
     #End of Gathering Info
@@ -226,11 +220,9 @@
 
         #Core Operations
         PERMHOME=/home/$USENAM/.home
-        echo "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: "
-        read -r PERMDATA
+        read -r -p "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: " PERMDATA
         PERMDATA=${PERMDATA,,}
-        echo "What is the filesystem (i.e. ext4) of your data/home partition?: "
-        read -r UPDATEFSTAB
+        read -r -p "What is the filesystem (i.e. ext4) of your data/home partition?: " UPDATEFSTAB
         PERMUUID=$( blkid -s UUID -o value "$PERMDATA" )
         sudo echo "UUID=$PERMUUID $PERMHOME $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
 
@@ -1098,7 +1090,7 @@
     fi
 
     #Updating Sudoers File to Add NOPASSWD to User
-        if [[ "$PASSWD" == 'N' || -z "$PASSWD" ]]; then
+        if [[ "$PASSWD" != "Y" ]]; then
             sudo rm -f "/etc/sudoers.d/90-$USER"
             sudo -k
         else

@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # ~David F Muller
-# Version 0.7.5.1-beta
+# Version 0.7.5.4-beta
 
     # Test for bash shell
     if [ "$0" != "/bin/bash" ]; then /bin/bash; fi
@@ -80,11 +80,33 @@
                                 wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
                                 wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
                                 sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
+                                if [ "$(lsb_release -sc)" == "buster" ]; then sudo sed -i 's/buster/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
+                                if [ "$(lsb_release -sc)" == "sid" ]; then sudo sed -i 's/sid/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
                                 ;;
                             vcode)
                                 curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
                                 sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
                                 sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+                                ;;
+                            lutris)
+                                if [[ "$base_distro" == "U" ]]; then
+                                    if [ "$ver" != "18.10" ] && [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
+                                    echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                                    wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                                else
+                                    echo "deb http://download.opensuse.org/repositories/home:/strycore/Debian_9.0/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                                    wget -q http://download.opensuse.org/repositories/home:/strycore/Debian_9.0/Release.key -O- | sudo apt-key add -
+                                fi
+                                ;;
+                            multimedia)
+                                if [[ "$(lsb_release -sc)" == 'jessie' || "$(lsb_release -sc)" == 'wheezy' ]]; then
+                                    sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list'
+                                else sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main non-free" | sudo tee -a /etc/apt/sources.list'
+                                fi
+                                ;;
+                            nightly-fox)
+                                wget -O - http://v.s.cz/info@vitexsoftware.cz.gpg.key | sudo apt-key add -
+                                echo "deb http://v.s.cz/ stable main" | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
                                 ;;
                         esac
                     done
@@ -190,10 +212,14 @@
             InCommand="sudo apt install"
             UpGradeCommand="sudo apt update && sudo apt dist-upgrade"
             $InCommand -y dialog curl
-            echo "Is this distro Ubuntu or Debian based (U/D)? "
+            echo "Is this distro Ubuntu or Debian based (U/d)? "
             read -r base_distro
             base_distro=${base_distro^}
-
+            if [[ "$base_distro" != "D" ]]; then
+                echo "Ubuntu it is"
+                base_distro="U"
+            else echo "Debian it is"
+            fi
             ;;
     esac
 
@@ -255,91 +281,98 @@
         then
             case $BaInCo in
                 apt)
-                    if [[ $base_distro == "U"]]
+                    if [[ $base_distro == "U" ]]; then
                     #Base Repos
                         regular_repos+=(main restricted universe multiverse)
+                    # Warning
+                        echo "Adding additional PPAs"
+                        echo "BE WARNED - Not all PPAs have release pages for all versions of Ubuntu. Be sure to verify and correct any issues after installation!"
 
-                    #PPAs
+                    # PPA Installation Commands
+                        ubuntu_ppas=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
+                        options1=(1 "Canonical Kernal Team" off    # any option can be set to default to "on"
+                            2 "Daniel Richter - grub-customizer" off 
+                            3 "Etcher" off
+                            4 "Nvidia Drivers" off
+                            5 "Linux Uprising - Oracle Java" off
+                            6 "Lutris" off
+                            7 "Oibaf - open video drivers for radeon, intel and nvidia" off
+                            8 "Sarnex - Wine + Gallium Nine" off
+                            9 "Maarten Baert - simplescreenrecorder" off
+                            10 "RVM - smplayer gtk & qt5" off
+                            11 "RVM - smplayer qt4" off
+                            12 "Sublime Text & Sublime Merge" off
+                            13 "Firefox-Nightly (firefox-trunk)" off
+                            14 "Thunderbird Beta" off
+                            15 "OBS Project" off
+                            16 "Otto Kesselgulasch - Gimp" off
+                            17 "Peppermint 9" off
+                            18 "Steam" off
+                            19 "Tony George - Timeshift etc" off
+                            20 "Virtualbox" off
+                            21 "Visual Studio Code" off
+                            22 "WebUpd8 Team" off
+                            23 "XFCE - xubuntu-dev-extra" off
+                            24 "XFCE - xubuntu-dev-experimental" off
+                            25 "KDE - kubuntu backports" off)
 
-                        # Warning
-                            echo "Adding additional PPAs"
-                            echo "BE WARNED - Not all PPAs have release pages for all versions of Ubuntu. Be sure to verify and correct any issues after installation!"
-
-                        # PPA Installation Commands
-                            ubuntu_ppas=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
-                            options1=(1 "Canonical Kernal Team" off    # any option can be set to default to "on"
-                                2 "Daniel Richter - grub-customizer" off 
-                                3 "Etcher" off
-                                4 "Nvidia Drivers" off
-                                5 "Linux Uprising - Oracle Java" off
-                                6 "Lutris" off
-                                7 "Oibaf - open video drivers for radeon, intel and nvidia" off
-                                8 "Sarnex - Wine + Gallium Nine" off
-                                9 "Maarten Baert - simplescreenrecorder" off
-                                10 "RVM - smplayer gtk & qt5" off
-                                11 "RVM - smplayer qt4" off
-                                12 "Sublime Text & Sublime Merge" off
-                                13 "Firefox-Nightly (firefox-trunk)" off
-                                14 "Thunderbird Beta" off
-                                15 "OBS Project" off
-                                16 "Otto Kesselgulasch - Gimp" off
-                                17 "Peppermint 9" off
-                                18 "Steam" off
-                                19 "Tony George - Timeshift etc" off
-                                20 "Virtualbox" off
-                                21 "Visual Studio Code" off
-                                22 "WebUpd8 Team" off
-                                23 "XFCE - xubuntu-dev-extra" off
-                                24 "XFCE - xubuntu-dev-experimental" off
-                                25 "KDE - kubuntu backports" off)
-
-                            selected_ppas=$("${ubuntu_ppas[@]}" "${options1[@]}" 2>&1 >/dev/tty)
-                            clear
-                            for selected_ppas in $selected_ppas;
-                            do                   
-                                case $selected_ppas in
-                                    1)  regular_repos+=(ppa:canonical-kernal-team/ppa) ;;
-                                    2)  regular_repos+=(ppa:danielrichter2007/grub-customizer) ;;
-                                    3)  oddball_repos+=(etcher) ;;
-                                    4)  regular_repos+=(ppa:graphics-drivers/ppa) ;;
-                                    5)  regular_repos+=(ppa:linuxuprising/java) ;;
-                                    6)  oddball_repos+=(lutris) ;;
-                                    7)  regular_repos+=(ppa:oibaf/graphics-drivers) ;;
-                                    8)  regular_repos+=(ppa:commendsarnex/winedri3) ;;
-                                    9)  oddball_repos+=(simplescreenrecorder) ;;
-                                    10) regular_repos+=(ppa:rvm/smplayer) ;;
-                                    11) regular_repos+=(ppa:rvm/smplayer-qt4) ;;
-                                    12) oddball_repos+=(sublime) ;;
-                                    13) regular_repos+=(ppa:ubuntu-mozilla-daily/ppa) ;;
-                                    14) regular_repos+=(ppa:mozillateam/thunderbird-next) ;;
-                                    15) regular_repos+=(ppa:obsproject/obs-studio) ;;
-                                    16) regular_repos+=(ppa:otto-kesselgulasch/gimp) ;;
-                                    17) oddball_repos+=(pepp9) ;;
-                                    18) oddball_repos+=(steam) ;;
-                                    19) regular_repos+=(ppa:teejee2008/ppa) ;;
-                                    20) oddball_repos+=(vbox) ;;
-                                    21) oddball_repos+=(vcode) ;;
-                                    22) regular_repos+=(ppa:webupd8team/y-ppa-manager) ;;
-                                    23) regular_repos+=(ppa:xubuntu-dev/extras) ;;
-
-                                    24)
-                                        #XFCE - xubuntu-dev-experimental
-                                        echo "Installing xubuntu-dev-experimental for XFCE"				
-                                        sudo add-apt-repository -yn ppa:xubuntu-dev/experimental
-                                        ;;
-
-                                    25)
-                                        #KDE kubuntu backports
-                                        echo "Installing kubuntu backports PPA for KDE"
-                                        sudo add-apt-repository -yn ppa:kubuntu-ppa/backports
-                                        ;;
-                                esac
-                            done
-
-                        # Updating the Cache after all PPAs have been set up.
-                            echo "Updating the Apt Cache. Double check for any problems!"
-                            sudo apt update
-
+                        selected_ubuntu_ppas=$("${ubuntu_ppas[@]}" "${options1[@]}" 2>&1 >/dev/tty)
+                        clear
+                        for selected_ubuntu_ppa in $selected_ubuntu_ppas;
+                        do                   
+                            case $selected_ubuntu_ppa in
+                                1)  regular_repos+=(ppa:canonical-kernal-team/ppa) ;;
+                                2)  regular_repos+=(ppa:danielrichter2007/grub-customizer) ;;
+                                3)  oddball_repos+=(etcher) ;;
+                                4)  regular_repos+=(ppa:graphics-drivers/ppa) ;;
+                                5)  regular_repos+=(ppa:linuxuprising/java) ;;
+                                6)  oddball_repos+=(lutris) ;;
+                                7)  regular_repos+=(ppa:oibaf/graphics-drivers) ;;
+                                8)  regular_repos+=(ppa:commendsarnex/winedri3) ;;
+                                9)  oddball_repos+=(simplescreenrecorder) ;;
+                                10) regular_repos+=(ppa:rvm/smplayer) ;;
+                                11) regular_repos+=(ppa:rvm/smplayer-qt4) ;;
+                                12) oddball_repos+=(sublime) ;;
+                                13) regular_repos+=(ppa:ubuntu-mozilla-daily/ppa) ;;
+                                14) regular_repos+=(ppa:mozillateam/thunderbird-next) ;;
+                                15) regular_repos+=(ppa:obsproject/obs-studio) ;;
+                                16) regular_repos+=(ppa:otto-kesselgulasch/gimp) ;;
+                                17) oddball_repos+=(pepp9) ;;
+                                18) oddball_repos+=(steam) ;;
+                                19) regular_repos+=(ppa:teejee2008/ppa) ;;
+                                20) oddball_repos+=(vbox) ;;
+                                21) oddball_repos+=(vcode) ;;
+                                22) regular_repos+=(ppa:webupd8team/y-ppa-manager) ;;
+                                23) regular_repos+=(ppa:xubuntu-dev/extras) ;;
+                                24) regular_repos+=(ppa:xubuntu-dev/experimental) ;;
+                                25) regular_repos+=(ppa:kubuntu-ppa/backports) ;;
+                            esac
+                        done
+                    else
+                        debian_repos=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
+                        options2=(1 "Firefox-Nightly" off    # any option can be set to default to "on"
+                            2 "deb-multimedia" off 
+                            3 "Virtualbox" off
+                            4 "Lutris" off
+                            5 "Visual Studio Code" off)
+     
+                        selected_debian_repos=$("${debian_repos[@]}" "${options2[@]}" 2>&1 >/dev/tty)
+                        clear
+                        for selected_debian_repo in $selected_debian_repos;
+                        do                   
+                            case $selected_debian_repo in
+                                1) oddball_repos+=(nightly-fox) ;;
+                                2) oddball_repos+=(multimedia) ;;
+                                3) oddball_repos+=(vbox) ;;
+                                4) oddball_repos+=(lutris) ;;
+                                5) oddball_repos+=(vcode) ;;
+                            esac
+                        done
+                    fi
+                    reg_repo_install
+                    oddball_repo_install
+                    echo "Updating the Apt Cache. Check for any errors for later correction."
+                    sudo apt update
                     ;;
 
                 A)
@@ -347,62 +380,6 @@
 
                 C)
                     ;;
-
-                D)
-                    sudo apt install dialog
-                    cmd2=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
-                    options2=(1 "Firefox-Nightly" off    # any option can be set to default to "on"
-                        2 "deb-multimedia" off 
-                        3 "Virtualbox" off
-                        4 "Lutris" off)
- 
-                    choices2=$("${cmd2[@]}" "${options2[@]}" 2>&1 >/dev/tty)
-                    clear
-                    for choice2 in $choices2;
-                    do                   
-                        case $choice2 in
-                          
-                            1)
-                                #Firefox-Nightly
-                                echo "Installing Firefox-Nightly Repository"
-                                wget -O - http://v.s.cz/info@vitexsoftware.cz.gpg.key | sudo apt-key add -
-                                echo "deb http://v.s.cz/ stable main" | sudo tee /etc/apt/sources.list.d/vitexsoftware.list
-                                ;;
-
-                            2)
-                                #Deb-Multimedia
-                                echo "Installing Deb-Multimedia Repository"
-                                if [[ "$(lsb_release -sc)" == 'jessie' || "$(lsb_release -sc)" == 'wheezy' ]]; then
-                                        sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list'
-                                    else sudo sh -c 'echo "deb http://www.deb-multimedia.org $(lsb_release -cs) main non-free" | sudo tee -a /etc/apt/sources.list'
-                                fi
-                                ;;
-
-                            3)	
-                                #Virtualbox
-                                echo "Installing Virtualbox Repository"
-                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo apt-key add -
-                                wget -q -O - https://www.virtualbox.org/download/oracle_vbox.asc | sudo apt-key add -
-                                sudo sh -c 'echo "deb http://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee -a /etc/apt/sources.list.d/virtualbox.list'
-    		                    if [ "$(lsb_release -sc)" == "buster" ]; then sudo sed -i 's/buster/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
-                                if [ "$(lsb_release -sc)" == "sid" ]; then sudo sed -i 's/sid/stretch/g' /etc/apt/sources.list.d/virtualbox*; fi
-                                ;;
-                                
-                            4)
-                                #Lutris
-                                echo "Installing Lutris Repository"
-                                echo "deb http://download.opensuse.org/repositories/home:/strycore/Debian_9.0/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
-                                wget -q http://download.opensuse.org/repositories/home:/strycore/Debian_9.0/Release.key -O- | sudo apt-key add -
-                                ;;
-
-                        esac
-                    done
-
-                    # Updating the Cache after all PPAs have been set up.
-                        echo "Updating the Apt Cache."
-                        sudo apt update
-                    ;;
-
                 F)
                     sudo apt install dialog
                     cmd3=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
@@ -1087,6 +1064,9 @@
                     ;;
 
             esac
+        for i in "${install_apps[@]}"; do
+            app_installer "$i"
+        done
     fi
 
     #Updating Sudoers File to Add NOPASSWD to User

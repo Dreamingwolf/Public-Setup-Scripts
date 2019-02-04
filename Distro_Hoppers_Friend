@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # ~David F Muller
-# Version 0.7.5.4-beta
+# Version 0.7.5.5-beta
 
     # Test for bash shell
     if [ "$0" != "/bin/bash" ]; then /bin/bash; fi
@@ -33,6 +33,13 @@
                 dnf)
                     ;;
                 pacman)
+                    for k in "${arch_repo_keys[@]}"; do
+                        sudo pacman-key --recv-keys "$k" && sudo pacman-key --lsign-key "$k"
+                    done
+                    curl -O https://download.sublimetext.com/sublimehq-pub.gpg && sudo pacman-key --add sublimehq-pub.gpg && sudo pacman-key --lsign-key 8A8F901A && rm sublimehq-pub.gpg
+                    for i in "${arch_repos[@]}"; do
+                        echo "$SUDOPWD" | sudo -S sh -c "echo \"$i\" >&- >> /etc/pacman.conf"
+                    done
                     ;;
                 zypper)
                     ;;
@@ -47,8 +54,6 @@
     oddball_repo_install () {
            case $BaInCo in
                 dnf)
-                    ;;
-                pacman)
                     ;;
                 zypper)
                     ;;
@@ -116,16 +121,18 @@
 
     #Functions for installing additional apps
     app_installer () {
-        $InCommand $1
+        $InCommand "$1"
     }
 
     special_apps_install () {
         case $1 in
             lutris)
-                if [[ ! -f /etc/apt/sources.list.d/lutris.list ]]; then
-                    if [ "$ver" != "18.10" ] && [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
-                    echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
-                    wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                if [[ "$BaInCo" == "apt" ]]; then
+                    if [[ ! -f /etc/apt/sources.list.d/lutris.list ]]; then
+                        if [ "$ver" != "18.10" ] && [ "$ver" != "18.04" ] && [ "$ver" != "17.10" ] && [ "$ver" != "17.04" ] && [ "$ver" != "16.04" ]; then ver="18.04"; fi
+                        echo "deb http://download.opensuse.org/repositories/home:/strycore/xUbuntu_$ver/ ./" | sudo tee /etc/apt/sources.list.d/lutris.list
+                        wget -q http://download.opensuse.org/repositories/home:/strycore/xUbuntu_"$ver"/Release.key -O- | sudo apt-key add -
+                    fi
                 fi
                 $InCommand lutris
                 ;;
@@ -146,6 +153,21 @@
     special_installs=()
     regular_repos=()
     oddball_repos=()
+    arch_repo_keys=(932BA3FA0C86812A32D1F54DAB5964AEB9FEDDDC 313F5ABD 4B4E7A9523ACD201 7448C890582975CD)
+    arch_repos=(" " "#Third party repos"
+" " "[qt-debug]" "Server = https://qutebrowser.org/qt-debug/$arch"
+" " "[seblu]" "Server = http://al.seblu.net/$repo/$arch"
+" " "[archlinuxfr]" "SigLevel = Never" "Server = http://repo.archlinux.fr/$arch"
+" " "[heftig]" "SigLevel = Never" "Server = https://pkgbuild.com/~heftig/repo/$arch"
+" " "[jkanetwork]" "SigLevel = Never" "Server = http://repo.jkanetwork.com/repo/$repo/"
+" " "[mesa-git]" "SigLevel = Never" "Server = https://pkgbuild.com/~lcarlier/$repo/$arch"
+" " "[jlk]" "Server = http://jlk.fjfi.cvut.cz/arch/repo"
+" " "[ownstuff]" "SigLevel = PackageOptional" "Server = http://martchus.no-ip.biz/repo/arch/$repo/os/$arch"
+" " "[xyne-x86_64]" "SigLevel = PackageOptional" "Server = https://xyne.archlinux.ca/repos/xyne"
+" " "[dx37essentials]" "SigLevel = PackageOptional" "Server = https://dx37.gitlab.io/$repo/$arch"
+" " "[miffe]" "SigLevel = PackageOptional" "Server = https://arch.miffe.org/$arch/"
+" " "[DEB_Arch_Extra]" "SigLevel = Optional TrustAll" "Server = https://mega.nz/linux/MEGAsync/Arch_Extra/$arch"
+" " "[sublime-text]" "Server = https://download.sublimetext.com/arch/stable/x86_64" " ")
 
     echo "Welcome to the Distro Hopper's Friend"
     echo "If you have any doubts about me or this script, please review the code before running"
@@ -191,13 +213,30 @@
     case $BaInCo in
         dnf)
             InCommand="sudo dnf install"
+            RefreshRepos="sudo dnf check-update"
             UpGradeCommand="sudo dnf -y system-upgrade"
             $InCommand -y dialog curl
+            read -r -p "What version number of Fedora is this distro based on? " fedora_base
             ;;
         pacman)
+            #Making sure yay-bin is installed
+            echo "Installing yay-bin (run as yay) for easier AUR access"
+            mkdir ./Installer
+            cd Installer || return
+            wget https://aur.archlinux.org/cgit/aur.git/snapshot/yay-bin.tar.gz
+            tar -xvf ./yay-bin.tar.gz
+            cd yay-bin || return
+            makepkg -i --noconfirm --needed
+            cd .. || return
+            sudo rm -fR ./yay-bin
+            cd .. || return
+            sudo rm -fR ./Installer
+            yay --editmenu --nodiffmenu --save
             InCommand="yay -S --needed"
+            RefreshRepos="sudo pacman -Syy"
             UpGradeCommand="yay -Syyu --noconfirm"
-            $InCommand --noconfirm dialog curl
+            $InCommand --noconfirm dialog curl reflector
+            sudo reflector -f 30 -l 30 --number 10 --verbose --save /etc/pacman.d/mirrorlist
             ;;
         emerge)
             InCommand="sudo emerge --ask"
@@ -205,15 +244,18 @@
             ;;
         zypper)
             InCommand="sudo zypper in"
+            RefreshRepos="sudo zypper ref"
             UpGradeCommand="sudo zypper -y dist-upgrade"
+            read -r -p "Is this distro based on Leap or Tumbleweed (L/t)? " suse_base
+            suse_base=${suse_base^}
             $InCommand -y dialog curl
             ;;
         apt)
             InCommand="sudo apt install"
+            RefreshRepos="sudo apt update"
             UpGradeCommand="sudo apt update && sudo apt dist-upgrade"
             $InCommand -y dialog curl
-            echo "Is this distro Ubuntu or Debian based (U/d)? "
-            read -r base_distro
+            read -r -p "Is this distro Ubuntu or Debian based (U/d)? " base_distro
             base_distro=${base_distro^}
             if [[ "$base_distro" != "D" ]]; then
                 echo "Ubuntu it is"
@@ -224,17 +266,18 @@
     esac
 
     #Additional PPAs and/or Repositories
-    read -r -p "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, and Fedora)? (Y/n): " ADDREPO
-    ADDREPO=${ADDREPO^}
+    echo "Included in this script is the option to install 3rd party repositories that I have found useful."
+    read -r -p "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, Arch and Fedora)? (Y/n): " additional_repos
+    additional_repos=${additional_repos^}
 
     #Snaps and Flatpaks
     echo "Would you like to enable Snaps and Flatpaks?"
-    read -r -p "These are required for some of the Additional Software Installs (Y/n): " SNAPFLAT
-    SNAPFLAT=${SNAPFLAT^}
+    read -r -p "These are required for some of the Additional Software Installs (Y/n): " add_snaps_flatpaks
+    add_snaps_flatpaks=${add_snaps_flatpaks^}
 
     #Additional Software
-    read -r -p "Would you like to install additional software? (Y/n): " ADDAPPS
-    ADDAPPS=${ADDAPPS^}
+    read -r -p "Would you like to install additional software? (Y/n): " additional_apps
+    additional_apps=${additional_apps^}
 
     #End of Gathering Info
 
@@ -277,7 +320,7 @@
     fi
 
 	#Setting up additional PPAs and other Repositories
-        if [[ "$ADDREPO" == 'Y' || -z "$ADDREPO" ]];
+        if [[ "$additional_repos" == 'Y' || -z "$additional_repos" ]];
         then
             case $BaInCo in
                 apt)
@@ -358,8 +401,7 @@
      
                         selected_debian_repos=$("${debian_repos[@]}" "${options2[@]}" 2>&1 >/dev/tty)
                         clear
-                        for selected_debian_repo in $selected_debian_repos;
-                        do                   
+                        for selected_debian_repo in $selected_debian_repos; do                   
                             case $selected_debian_repo in
                                 1) oddball_repos+=(nightly-fox) ;;
                                 2) oddball_repos+=(multimedia) ;;
@@ -372,51 +414,39 @@
                     reg_repo_install
                     oddball_repo_install
                     echo "Updating the Apt Cache. Check for any errors for later correction."
-                    sudo apt update
+                    "$RefreshRepos"
                     ;;
 
-                A)
+                pacman)
+                    reg_repo_install
+                    echo "Updating the repos. Check for any errors for later correction."
+                    "$RefreshRepos"
                     ;;
-
-                C)
-                    ;;
-                F)
+                dnf)
                     sudo apt install dialog
-                    cmd3=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
+                    fedora_repos=(dialog --separate-output --checklist "Please Select Repos you want to install (only RPM Fusion compatible repos are included):" 22 76 16)
                     options3=(1 "fedora-workstation-repositories (PyCharm, Google Chrome, Nvidia drivers fedora28+, Steam client fedora28+" off    # any option can be set to default to "on"
                         2 "RPM Fusion" off 
                         3 "Virtualbox" off
                         4 "Lutris" off)
  
-                    choices3=$("${cmd3[@]}" "${options3[@]}" 2>&1 >/dev/tty)
+                    selected_fedora_repos=$("${fedora_repos[@]}" "${options3[@]}" 2>&1 >/dev/tty)
                     clear
-                    for choice3 in $choices3;
-                    do                   
-                        case $choice3 in
-                          
+                    for selected_fedora_repo in $selected_fedora_repos; do                   
+                        case $selected_fedora_repo in
                             1)
-                                #fedora-workstation-repositories
-                                echo "Installing fedora-workstation-repositories"
                                 sudo dnf -y remove google-chrome-release
                                 sudo dnf -y install fedora-workstation-repositories
                                 ;;
-
                             2)
-                                #RPM Fusion
-                                echo "Installing RPM Fusion"
                                 sudo dnf install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
                                 ;;
                             3)	
-                                #Virtualbox
-                                echo "Installing Virtualbox Repository"
                                 sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | rpm --import -
                                 sudo wget -q https://download.virtualbox.org/virtualbox/rpm/fedora/virtualbox.repo -O /etc/yum.repos.d/virtualbox.repo
                                 ;;
-                                
                             4)
-                                #Lutris
-                                echo "Installing Lutris repo"
-                                sudo dnf config-manager --add-repo "https://download.opensuse.org/repositories/home:strycore/Fedora_$FEDSUB/home:strycore.repo"
+                                sudo dnf config-manager --add-repo "https://download.opensuse.org/repositories/home:strycore/Fedora_$fedora_base/home:strycore.repo"
                                 ;;
 
                         esac
@@ -439,14 +469,13 @@
         fi
 
     #Snaps and Flatpaks
-        if [[ "$SNAPFLAT" == 'Y' || -z "$SNAPFLAT" ]];
+        if [[ "$add_snaps_flatpaks" == 'Y' || -z "$add_snaps_flatpaks" ]];
         then
             echo "Installing Flatpak & Snaps"
-            case $DISTBASE in
-                U)
-                    sudo add-apt-repository -yn ppa:alexlarsson/flatpak
-		            if [ "$(lsb_release -sc)" == "cosmic" ]; then sudo sed -i 's/cosmic/bionic/g' /etc/apt/sources.list.d/alexlarsson*; fi
-                    sudo apt update && sudo apt -y install flatpak snapd
+            case $BaInCo in
+                apt)
+                    if [[ "$base_distro" == "U" ]]; then sudo add-apt-repository -yn ppa:alexlarsson/flatpak; fi
+                    $RefreshRepos && $InCommand -y flatpak snapd
                     ;;
 
                 A)
@@ -491,7 +520,7 @@
         fi
 
     #Additional Software Installation
-        if [[ "$ADDAPPS" == 'Y' || -z "$ADDAPPS" ]];
+        if [[ "$additional_apps" == 'Y' || -z "$additional_apps" ]];
         then
             echo "Installing Additional Software"
             cmd4=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)

@@ -199,7 +199,7 @@
     osInfo[/etc/redhat-release]=dnf
     osInfo[/etc/arch-release]=pacman
     osInfo[/etc/gentoo-release]=emerge
-    osInfo[SUSe-release]=zypper
+    osInfo[/etc/SuSE-release]=zypper
     osInfo[/etc/debian_version]=apt
 
     for i in "${!osInfo[@]}"; do

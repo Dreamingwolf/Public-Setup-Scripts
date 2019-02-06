@@ -13,21 +13,19 @@
 # GNU General Public License for more details.
 #
 # ~David F Muller
-# Version 0.7.5.5-beta
+# Version 0.7.6-beta
 
-    # Test for bash shell
+# Test for bash shell
     if [ "$0" != "/bin/bash" ]; then /bin/bash; fi
-
-    #function for symlinking files and folders from a seperate home partition
+#function for symlinking files and folders from a seperate home partition
     symlink_setup () {
-        if [ -e "$PERMHOME/$1" ]; then
-            if [ -e "/home/$USENAM/$1" ]; then
-                sudo rm -Rf "/home/$USENAM/$1"; fi
-        sudo ln -s "$PERMHOME/$1" "/home/$USENAM"
+        if [ -e "$user_data_mountpoint/$1" ]; then
+            if [ -e "/home/$user_name/$1" ]; then
+                sudo rm -Rf "/home/$user_name/$1"; fi
+        sudo ln -s "$user_data_mountpoint/$1" "/home/$user_name"
         fi
     }
-
-    #Functions for adding repos
+#Functions for adding repos
     reg_repo_install () {
            case $BaInCo in
                 dnf)
@@ -38,7 +36,7 @@
                     done
                     curl -O https://download.sublimetext.com/sublimehq-pub.gpg && sudo pacman-key --add sublimehq-pub.gpg && sudo pacman-key --lsign-key 8A8F901A && rm sublimehq-pub.gpg
                     for i in "${arch_repos[@]}"; do
-                        echo "$SUDOPWD" | sudo -S sh -c "echo \"$i\" >&- >> /etc/pacman.conf"
+                        echo "$user_sudo_password" | sudo -S sh -c "echo \"$i\" >&- >> /etc/pacman.conf"
                     done
                     ;;
                 zypper)
@@ -118,8 +116,7 @@
                     ;;
             esac   
     }
-
-    #Functions for installing additional apps
+#Functions for installing additional apps
     app_installer () {
         $InCommand "$1"
     }
@@ -147,7 +144,7 @@
                 ;;
         esac
     }
-    #Array to list home folders requiring simlinking
+#Prep needed arrays
     home_folders=()
     install_apps=()
     special_installs=()
@@ -169,6 +166,7 @@
 " " "[DEB_Arch_Extra]" "SigLevel = Optional TrustAll" "Server = https://mega.nz/linux/MEGAsync/Arch_Extra/$arch"
 " " "[sublime-text]" "Server = https://download.sublimetext.com/arch/stable/x86_64" " ")
 
+#Main body of script
     echo "Welcome to the Distro Hopper's Friend"
     echo "If you have any doubts about me or this script, please review the code before running"
     echo "(You really should do this anyway! ;-) )"
@@ -176,25 +174,44 @@
     echo "OK then, let's get started!"
     echo "Sudo password is required for certain commands in this script."
     echo "Entering an incorrect password will cause the script to crash."
-    read -r -s -p "Enter password: " SUDOPWD && printf "\n"
-    echo "$SUDOPWD" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-$USER"
-
-    #Gather Basic Info
-    read -r -p "What is your user name?: " USENAM
-    if [ "$USENAM" != "$USER" ]; then
-        echo "There was a mismatch in usernames that will cause issues...script will now exit"
-        exit 1; fi
-    USENAM=${USENAM,,}
-
-    #Auto Entry of Sudo Password in the Terminal
-    read -r -p "Do you want to auto enter your sudo password when in a terminal? (y/N): " PASSWD
-    PASSWD=${PASSWD^}
-
-    #Dedicated Data/Home Partition
-    read -r -p "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): " SEPDATA
-    SEPDATA=${SEPDATA^}
-
-    #Determine Base Distro
+    read -r -s -p "Enter password: " user_sudo_password && printf "\n"
+    echo "$user_sudo_password" | sudo -S sh -c "echo \"$USER ALL=(ALL) NOPASSWD: ALL\" >&- > /etc/sudoers.d/90-$USER"
+#Gather Basic Info
+    input_check="N"
+    while [[ "$input_check" == "N" ]]; do
+        read -r -p "What is your user name?: " user_name
+        if [[ "$user_name" == "$USER" ]]; then input_check="Y"
+        else
+            echo " You are logged in as $USER, but you entered $user_name. This mismatch will cause issues."
+            read -r -p "Do you wish to re-enter your user name (Y/n [No will exit the script])? " reenter_name
+            reenter_name=${reenter_name^}
+            if [[ -z "$reenter_name" ]]; then reenter_name="Y"; fi
+            if [[ "$reenter_name" != "Y" ]]; then
+                sudo rm -f "/etc/sudoers.d/90-$USER"
+                sudo -k
+                exit 1; fi
+        fi
+    done
+    user_name=${user_name,,}
+#Auto Entry of Sudo Password in the Terminal
+    input_check="N"
+    while [[ "$input_check" == "N" ]]; do
+        read -r -p "Do you want to auto enter your sudo password when in a terminal? (y/N): " auto_user_password
+        auto_user_password=${auto_user_password^}
+        if [[ -z "$auto_user_password" ]]; then auto_user_password="N" && input_check="Y"
+        elif [[ "$auto_user_password" == "Y" || "$auto_user_password" == "N" ]]; then input_check="Y"
+        else echo "Sorry I didn't understand that."; fi
+    done
+#Dedicated Data/Home Partition
+    input_check="N"
+    while [[ "$input_check" == "N" ]]; do
+        read -r -p "Do you have a seperate/dedicated data partition that holds your Home folders? (Y/n): " seperate_data_partition
+        seperate_data_partition=${seperate_data_partition^}
+        if [[ -z "$seperate_data_partition" ]]; then seperate_data_partition="Y" && input_check="Y"
+        elif [[ "$seperate_data_partition" == "Y" || "$seperate_data_partition" == "N" ]]; then input_check="Y"
+        else echo "Sorry I didn't understand that."; fi
+    done
+#Determine Base Distro
     declare -A osInfo;
     osInfo[/etc/redhat-release]=dnf
     osInfo[/etc/arch-release]=pacman
@@ -208,8 +225,7 @@
             BaInCo="${osInfo[$i]}"
         fi
     done
-
-    #Set Install Command
+#Set Install Command
     case $BaInCo in
         dnf)
             InCommand="sudo dnf install"
@@ -219,7 +235,7 @@
             read -r -p "What version number of Fedora is this distro based on? " fedora_base
             ;;
         pacman)
-            #Making sure yay-bin is installed
+#Making sure yay-bin is installed
             echo "Installing yay-bin (run as yay) for easier AUR access"
             mkdir ./Installer
             cd Installer || return
@@ -246,80 +262,93 @@
             InCommand="sudo zypper in"
             RefreshRepos="sudo zypper ref"
             UpGradeCommand="sudo zypper -y dist-upgrade"
-            read -r -p "Is this distro based on Leap or Tumbleweed (L/t)? " suse_base
-            suse_base=${suse_base^}
-            $InCommand -y dialog curl
+            input_check="N"
+            while [[ "$input_check" == "N" ]]; do
+                read -r -p "Is this distro based on Leap or Tumbleweed (L/t)? " suse_base
+                suse_base=${suse_base^}
+                if [[ -z "$suse_base" ]]; then suse_base="L" && input_check="Y"
+                elif [[ "$suse_base" == "L" || "$suse_base" == "T" ]]; then input_check="Y"
+                else echo "Sorry I didn't understand that."; fi
+                $InCommand -y dialog curl
+            done
             ;;
         apt)
             InCommand="sudo apt install"
             RefreshRepos="sudo apt update"
             UpGradeCommand="sudo apt update && sudo apt dist-upgrade"
             $InCommand -y dialog curl
-            read -r -p "Is this distro Ubuntu or Debian based (U/d)? " base_distro
-            base_distro=${base_distro^}
-            if [[ "$base_distro" != "D" ]]; then
-                echo "Ubuntu it is"
-                base_distro="U"
-            else echo "Debian it is"
-            fi
+            input_check="N"
+            while [[ "$input_check" == "N" ]]; do
+                read -r -p "Is this distro Ubuntu or Debian based (U/d)? " base_distro
+                base_distro=${base_distro^}
+                if [[ -z "$base_distro" ]]; then base_distro="U" && input_check="Y"
+                elif [[ "$base_distro" == "U" || "$base_distro" == "D" ]]; then input_check="Y"
+                else echo "Sorry I didn't understand that."; fi
+            done
             ;;
     esac
-
-    #Additional PPAs and/or Repositories
+#Additional PPAs and/or Repositories
     echo "Included in this script is the option to install 3rd party repositories that I have found useful."
-    read -r -p "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, Arch and Fedora)? (Y/n): " additional_repos
-    additional_repos=${additional_repos^}
-
-    #Snaps and Flatpaks
+    input_check="N"
+    while [[ "$input_check" == "N" ]]; do
+        read -r -p "Would you like to install additional PPAs/Repositories (Currently only for Ubuntu, Debian, Arch and Fedora)? (Y/n): " additional_repos
+        additional_repos=${additional_repos^}
+        if [[ -z "$additional_repos" ]]; then additional_repos="Y" && input_check="Y"
+        elif [[ "$additional_repos" == "Y" || "$additional_repos" == "N" ]]; then input_check="Y"
+        else echo "Sorry I didn't understand that."; fi
+    done
+#Snaps and Flatpaks
     echo "Would you like to enable Snaps and Flatpaks?"
-    read -r -p "These are required for some of the Additional Software Installs (Y/n): " add_snaps_flatpaks
-    add_snaps_flatpaks=${add_snaps_flatpaks^}
+    input_check="N"
+    while [[ "$input_check" == "N" ]]; do
+        read -r -p "These are required for some of the Additional Software Installs (Y/n): " add_snaps_flatpaks
+        add_snaps_flatpaks=${add_snaps_flatpaks^}
+        if [[ -z "$add_snaps_flatpaks" ]]; then add_snaps_flatpaks="Y" && input_check="Y"
+        elif [[ "$add_snaps_flatpaks" == "Y" || "$add_snaps_flatpaks" == "N" ]]; then input_check="Y"
+        else echo "Sorry I didn't understand that."; fi
+    done
+#Additional Software
+    input_check="N"
+    while [[ "$input_check" == "N" ]]; do
+        read -r -p "Would you like to install additional software? (Y/n): " additional_apps
+        additional_apps=${additional_apps^}
+        if [[ -z "$additional_apps" ]]; then additional_apps="Y" && input_check="Y"
+        elif [[ "$additional_apps" == "Y" || "$additional_apps" == "N" ]]; then input_check="Y"
+        else echo "Sorry I didn't understand that."; fi
+    done
+#End of Gathering Info
 
-    #Additional Software
-    read -r -p "Would you like to install additional software? (Y/n): " additional_apps
-    additional_apps=${additional_apps^}
-
-    #End of Gathering Info
-
-    #Start of Actual Work
+#Start of Actual Work
     echo "OK then, thats all I need for now, lets get started!"
-
-	#Seperate Home/Data Partition
-    if [[ "$SEPDATA" == 'Y' || -z "$SEPDATA" ]]; then
-
-        #Core Operations
-        PERMHOME=/home/$USENAM/.home
-        read -r -p "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: " PERMDATA
-        PERMDATA=${PERMDATA,,}
-        read -r -p "What is the filesystem (i.e. ext4) of your data/home partition?: " UPDATEFSTAB
-        PERMUUID=$( blkid -s UUID -o value "$PERMDATA" )
-        sudo echo "UUID=$PERMUUID $PERMHOME $UPDATEFSTAB users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
-
-        #Setup Directories for Mounting
+#Seperate Home/Data Partition
+    if [[ "$seperate_data_partition" == 'Y' ]]; then
+        user_data_mountpoint=/home/$user_name/.home
+        read -r -p "What is the absolute path (i.e. /dev/sda1) of your data/home partition?: " user_data_device
+        user_data_device=${user_data_device,,}
+        read -r -p "What is the filesystem (i.e. ext4) of your data/home partition?: " user_data_filesystem
+        user_data_UUID=$( blkid -s UUID -o value "$user_data_device" )
+        sudo echo "UUID=$user_data_UUID $user_data_mountpoint $user_data_filesystem users,exec,rw,auto,noatime 0 2" | sudo tee -a /etc/fstab
+#Setup Directories for Mounting
         echo "Creating directory for mounting"
-        mkdir "$PERMHOME"
-
-    	#Setup home folder
+        mkdir "$user_data_mountpoint"
+#Setup home folder
         echo "Mounting, setting up, and linking home folder"
-        sudo mount "$PERMDATA" "$PERMHOME"
-
-        #Get list of files/folders to simlimk
+        sudo mount "$user_data_device" "$user_data_mountpoint"
+#Get list of files/folders to simlimk
         echo "Enter the names of all files and folders you wished linked from your home partition (Press Cntrl-D when finished): "
         while read -r HOMELINKS; do
             home_folders+=("$HOMELINKS")
         done
         echo "These are the files/folders which will be linked : ${home_folders[*]}"
-
-		#Remove original folders and set symbolic links
+#Remove original folders and set symbolic links
         for i in "${home_folders[@]}"; do
             symlink_setup "$i"
         done
-
-        #Assuring ownership of the new links
-            sudo chown -R "$USENAM:$USENAM" "/home/$USENAM"
+#Assuring ownership of the new links
+            sudo chown -R "$user_name:$user_name" "/home/$user_name"
     fi
 
-	#Setting up additional PPAs and other Repositories
+#Setting up additional PPAs and other Repositories
         if [[ "$additional_repos" == 'Y' || -z "$additional_repos" ]];
         then
             case $BaInCo in
@@ -330,7 +359,6 @@
                     # Warning
                         echo "Adding additional PPAs"
                         echo "BE WARNED - Not all PPAs have release pages for all versions of Ubuntu. Be sure to verify and correct any issues after installation!"
-
                     # PPA Installation Commands
                         ubuntu_ppas=(dialog --separate-output --checklist "Please Select PPAs you want to install:" 22 76 16)
                         options1=(1 "Canonical Kernal Team" off    # any option can be set to default to "on"
@@ -359,10 +387,8 @@
                             24 "XFCE - xubuntu-dev-experimental" off
                             25 "KDE - kubuntu backports" off)
 
-                        selected_ubuntu_ppas=$("${ubuntu_ppas[@]}" "${options1[@]}" 2>&1 >/dev/tty)
-                        clear
-                        for selected_ubuntu_ppa in $selected_ubuntu_ppas;
-                        do                   
+                        selected_ubuntu_ppas=$("${ubuntu_ppas[@]}" "${options1[@]}" 2>&1 >/dev/tty) && clear
+                        for selected_ubuntu_ppa in $selected_ubuntu_ppas; do                   
                             case $selected_ubuntu_ppa in
                                 1)  regular_repos+=(ppa:canonical-kernal-team/ppa) ;;
                                 2)  regular_repos+=(ppa:danielrichter2007/grub-customizer) ;;
@@ -398,9 +424,7 @@
                             3 "Virtualbox" off
                             4 "Lutris" off
                             5 "Visual Studio Code" off)
-     
-                        selected_debian_repos=$("${debian_repos[@]}" "${options2[@]}" 2>&1 >/dev/tty)
-                        clear
+                        selected_debian_repos=$("${debian_repos[@]}" "${options2[@]}" 2>&1 >/dev/tty) && clear
                         for selected_debian_repo in $selected_debian_repos; do                   
                             case $selected_debian_repo in
                                 1) oddball_repos+=(nightly-fox) ;;
@@ -411,12 +435,10 @@
                             esac
                         done
                     fi
-                    reg_repo_install
-                    oddball_repo_install
+                    reg_repo_install && oddball_repo_install
                     echo "Updating the Apt Cache. Check for any errors for later correction."
                     "$RefreshRepos"
                     ;;
-
                 pacman)
                     reg_repo_install
                     echo "Updating the repos. Check for any errors for later correction."
@@ -429,29 +451,21 @@
                         2 "RPM Fusion" off 
                         3 "Virtualbox" off
                         4 "Lutris" off)
- 
-                    selected_fedora_repos=$("${fedora_repos[@]}" "${options3[@]}" 2>&1 >/dev/tty)
-                    clear
+                    selected_fedora_repos=$("${fedora_repos[@]}" "${options3[@]}" 2>&1 >/dev/tty) && clear
                     for selected_fedora_repo in $selected_fedora_repos; do                   
                         case $selected_fedora_repo in
-                            1)
-                                sudo dnf -y remove google-chrome-release
-                                sudo dnf -y install fedora-workstation-repositories
-                                ;;
-                            2)
-                                sudo dnf install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
-                                ;;
-                            3)	
-                                sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | rpm --import -
-                                sudo wget -q https://download.virtualbox.org/virtualbox/rpm/fedora/virtualbox.repo -O /etc/yum.repos.d/virtualbox.repo
-                                ;;
-                            4)
-                                sudo dnf config-manager --add-repo "https://download.opensuse.org/repositories/home:strycore/Fedora_$fedora_base/home:strycore.repo"
-                                ;;
-
+                            1) sudo dnf -y remove google-chrome-release
+                               sudo dnf -y install fedora-workstation-repositories
+                               ;;
+                            2) sudo dnf install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm" "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+                               ;;
+                            3) sudo wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | rpm --import -
+                               sudo wget -q https://download.virtualbox.org/virtualbox/rpm/fedora/virtualbox.repo -O /etc/yum.repos.d/virtualbox.repo
+                               ;;
+                            4) sudo dnf config-manager --add-repo "https://download.opensuse.org/repositories/home:strycore/Fedora_$fedora_base/home:strycore.repo"
+                               ;;
                         esac
                     done
-
                     # Updating the Cache after all PPAs have been set up.
                         echo "Updating the dnf Cache."
                         sudo dnf check-update
@@ -459,11 +473,6 @@
 
                 O)
                     ;;
-
-                *)
-                    echo "Skipping this section due to faulty input"
-                    ;;
-
             esac                        
 
         fi
@@ -1087,11 +1096,6 @@
 
                 O)
                     ;;
-
-                *)
-                    echo "Skipping this section due to faulty input"
-                    ;;
-
             esac
         for i in "${install_apps[@]}"; do
             app_installer "$i"
@@ -1099,7 +1103,7 @@
     fi
 
     #Updating Sudoers File to Add NOPASSWD to User
-        if [[ "$PASSWD" != "Y" ]]; then
+        if [[ "$auto_user_password" != "Y" ]]; then
             sudo rm -f "/etc/sudoers.d/90-$USER"
             sudo -k
         else

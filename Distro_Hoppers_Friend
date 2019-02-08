@@ -509,8 +509,8 @@
                     sudo dnf -y install flatpak
                     ;;
 
-                O)
-                    if [ "$SUSESUB" == 'T' ];
+                zypper)
+                    if [ "$suse_base" == 'T' ];
                     then
                         sudo zypper addrepo --refresh http://download.opensuse.org/repositories/system:/snappy/openSUSE_Tumbleweed/ snappy
                     else

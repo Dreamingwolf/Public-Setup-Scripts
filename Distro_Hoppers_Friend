@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Distro Hopper's Friend
 # David F Muller
 #
@@ -13,7 +13,7 @@
 # GNU General Public License for more details.
 #
 # ~David F Muller
-# Version 0.7.6-beta
+# Version 0.7.6.1-beta
 
 # Test for bash shell
     if [ "$0" != "/bin/bash" ]; then /bin/bash; fi
@@ -259,18 +259,26 @@
             UpGradeCommand="sudo emerge --update --deep --with-bdeps=y @world"
             ;;
         zypper)
+            sudo groupadd -f -g 1000 $USER
+            sudo usermod -aG $USER $USER
             InCommand="sudo zypper in"
             RefreshRepos="sudo zypper ref"
-            UpGradeCommand="sudo zypper -y dist-upgrade"
-            input_check="N"
-            while [[ "$input_check" == "N" ]]; do
-                read -r -p "Is this distro based on Leap or Tumbleweed (L/t)? " suse_base
-                suse_base=${suse_base^}
-                if [[ -z "$suse_base" ]]; then suse_base="L" && input_check="Y"
-                elif [[ "$suse_base" == "L" || "$suse_base" == "T" ]]; then input_check="Y"
-                else echo "Sorry I didn't understand that."; fi
-                $InCommand -y dialog curl
-            done
+            UpGradeCommand="sudo zypper -n dist-upgrade"
+            if [ -e /etc/os-release ]; then
+               . /etc/os-release
+            else
+               . /usr/lib/os-release
+            fi
+            if [[ "$ID_LIKE" = *"opensuse"* ]]; then
+                if [ "$ID" = "opensuse-leap" ]; then
+                    echo "Distro apperars based on Leap" && suse_base="L"
+                elif [ "$ID" = "opensuse-tumbleweed" ]; then
+                    echo "Distro appears based on Tumbleweed" && suse_base="T"
+                else
+                    echo "Can't determine whether Leap or Tumbleweed based, so setting to Leap." && suse_base="L"
+                fi
+            fi
+            $InCommand -n dialog curl
             ;;
         apt)
             InCommand="sudo apt install"
@@ -470,45 +478,30 @@
                         echo "Updating the dnf Cache."
                         sudo dnf check-update
                     ;;
-
-                O)
+                zypper)
                     ;;
             esac                        
 
         fi
 
     #Snaps and Flatpaks
-        if [[ "$add_snaps_flatpaks" == 'Y' || -z "$add_snaps_flatpaks" ]];
-        then
+        if [[ "$add_snaps_flatpaks" == 'Y' || -z "$add_snaps_flatpaks" ]]; then
             echo "Installing Flatpak & Snaps"
             case $BaInCo in
                 apt)
                     if [[ "$base_distro" == "U" ]]; then sudo add-apt-repository -yn ppa:alexlarsson/flatpak; fi
                     $RefreshRepos && $InCommand -y flatpak snapd
                     ;;
-
-                A)
+                pacman)
                     sudo pacman -S --needed --noconfirm snapd
                     sudo systemctl enable --now snapd.socket
                     sudo pacman -S --needed --noconfirm flatpak
                     ;;
-
-                C)
-                    sudo pacman -S --needed --noconfirm snapd
-                    sudo systemctl enable --now snapd.socket
-                    sudo pacman -S --needed --noconfirm flatpak
-                    ;;
-
-                D)
-                    sudo apt update && sudo apt -y install flatpak snapd
-                    ;;
-
-                F)
+                dnf)
                     sudo dnf -y install snapd
                     sudo ln -s /var/lib/snapd/snap /snap
                     sudo dnf -y install flatpak
                     ;;
-
                 zypper)
                     if [ "$suse_base" == 'T' ];
                     then
@@ -516,21 +509,14 @@
                     else
                         sudo zypper addrepo --refresh http://download.opensuse.org/repositories/system:/snappy/openSUSE_Leap_42.3/ snappy
                     fi
-                    sudo zypper install snapd
+                    sudo zypper install -n snapd flatpak
                     sudo systemctl enable --now snapd.socket
-                    sudo zypper install flatpak
                     ;;
-
-                *)
-                    echo "Skipping this section due to faulty input"
-                    ;;
-
             esac                
         fi
 
     #Additional Software Installation
-        if [[ "$additional_apps" == 'Y' || -z "$additional_apps" ]];
-        then
+        if [[ "$additional_apps" == 'Y' || -z "$additional_apps" ]]; then
             echo "Installing Additional Software"
             cmd4=(dialog --separate-output --checklist "Please Select Software you want to install:" 22 76 16)
         	options4=(1 "Sublime Text" off    # any option can be set to default to "on"
